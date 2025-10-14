@@ -107,11 +107,12 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
         {/* BACK OF CARD */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden"
+          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden cursor-pointer"
           style={{ 
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
           }}
+          onClick={() => setIsFlipped(false)}
         >
           {/* Blurred Background Image */}
           <div className="absolute inset-0 bg-gray-900">
@@ -141,7 +142,10 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
           {/* Back button - positioned over image */}
           <button 
-            onClick={() => setIsFlipped(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFlipped(false);
+            }}
             className="absolute top-4 left-4 z-20 bg-white/20 hover:bg-white/30 rounded-full p-2 shadow-lg transition backdrop-blur-sm"
           >
             <span className="text-xl text-white">←</span>
