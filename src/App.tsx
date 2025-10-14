@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
-import { initializeTrails } from './lib/firestoreHelpers';
 import AuthForm from './components/AuthForm';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -13,7 +12,6 @@ import Connections from './pages/Connections';
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Listen for auth state changes
@@ -24,22 +22,6 @@ function App() {
 
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    // Initialize trails collection once
-    const init = async () => {
-      if (!initialized) {
-        try {
-          await initializeTrails();
-          setInitialized(true);
-        } catch (error) {
-          console.error('Error initializing trails:', error);
-        }
-      }
-    };
-
-    init();
-  }, [initialized]);
 
   if (loading) {
     return (
