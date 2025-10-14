@@ -47,8 +47,28 @@ export interface Swipe {
 export interface Match {
   trailId: string;
   userIds: string[];
+  userProfiles: { uid: string; username: string; displayName: string }[];
   matchedAt: Timestamp;
   trail?: Trail;
+}
+
+export interface ConnectionRequest {
+  id: string;
+  fromUserId: string;
+  fromUsername: string;
+  fromDisplayName: string;
+  toUserId: string;
+  toUsername: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Timestamp;
+}
+
+export interface Connection {
+  userId: string;
+  connectedUserId: string;
+  connectedUsername: string;
+  connectedDisplayName: string;
+  connectedAt: Timestamp;
 }
 
 // Authentication Functions
@@ -277,9 +297,25 @@ const checkForMatches = async (userId: string, trailId: string): Promise<void> =
         const matchSnap = await getDoc(matchRef);
         
         if (!matchSnap.exists()) {
+          // Get user profiles
+          const user1Profile = await getUserProfile(user1);
+          const user2Profile = await getUserProfile(user2);
+          
           await setDoc(matchRef, {
             trailId,
             userIds: [user1, user2],
+            userProfiles: [
+              {
+                uid: user1,
+                username: user1Profile?.username || '',
+                displayName: user1Profile?.displayName || ''
+              },
+              {
+                uid: user2,
+                username: user2Profile?.username || '',
+                displayName: user2Profile?.displayName || ''
+              }
+            ],
             matchedAt: Timestamp.now(),
           });
           console.log('✨ Match created!', { matchId, user1, user2, trailId });
@@ -542,4 +578,188 @@ export const initializeTrails = async (): Promise<void> => {
   }
 
   console.log('Successfully initialized 20 hiking trails');
+};
+
+// Connection Functions
+
+/**
+ * Get user by username
+ */
+export const getUserByUsername = async (username: string): Promise<UserProfile | null> => {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('username', '==', username.toLowerCase()));
+  const snapshot = await getDocs(q);
+  
+  if (snapshot.empty) {
+    return null;
+  }
+  
+  return snapshot.docs[0].data() as UserProfile;
+};
+
+/**
+ * Send a connection request to another user
+ */
+export const sendConnectionRequest = async (toUsername: string): Promise<void> => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  
+  const fromUser = await getUserProfile(auth.currentUser.uid);
+  if (!fromUser) throw new Error('User profile not found');
+  
+  const toUser = await getUserByUsername(toUsername);
+  if (!toUser) throw new Error('User not found');
+  
+  if (fromUser.uid === toUser.uid) {
+    throw new Error('Cannot send request to yourself');
+  }
+  
+  // Check if request already exists
+  const requestsRef = collection(db, 'connectionRequests');
+  const existingRequest = query(
+    requestsRef,
+    where('fromUserId', '==', fromUser.uid),
+    where('toUserId', '==', toUser.uid),
+    where('status', '==', 'pending')
+  );
+  const existingSnapshot = await getDocs(existingRequest);
+  
+  if (!existingSnapshot.empty) {
+    throw new Error('Connection request already sent');
+  }
+  
+  // Check if already connected
+  const isConnected = await checkConnection(toUser.uid);
+  if (isConnected) {
+    throw new Error('Already connected with this user');
+  }
+  
+  // Create the request
+  const requestRef = doc(collection(db, 'connectionRequests'));
+  await setDoc(requestRef, {
+    id: requestRef.id,
+    fromUserId: fromUser.uid,
+    fromUsername: fromUser.username,
+    fromDisplayName: fromUser.displayName,
+    toUserId: toUser.uid,
+    toUsername: toUser.username,
+    status: 'pending',
+    createdAt: Timestamp.now()
+  });
+};
+
+/**
+ * Get connection requests sent by current user
+ */
+export const getSentRequests = async (): Promise<ConnectionRequest[]> => {
+  if (!auth.currentUser) return [];
+  
+  const requestsRef = collection(db, 'connectionRequests');
+  const q = query(
+    requestsRef,
+    where('fromUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  const snapshot = await getDocs(q);
+  
+  return snapshot.docs.map(doc => doc.data() as ConnectionRequest);
+};
+
+/**
+ * Get connection requests received by current user
+ */
+export const getReceivedRequests = async (): Promise<ConnectionRequest[]> => {
+  if (!auth.currentUser) return [];
+  
+  const requestsRef = collection(db, 'connectionRequests');
+  const q = query(
+    requestsRef,
+    where('toUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  const snapshot = await getDocs(q);
+  
+  return snapshot.docs.map(doc => doc.data() as ConnectionRequest);
+};
+
+/**
+ * Accept a connection request
+ */
+export const acceptConnectionRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) throw new Error('Not authenticated');
+  
+  const requestRef = doc(db, 'connectionRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Request not found');
+  }
+  
+  const request = requestSnap.data() as ConnectionRequest;
+  
+  // Update request status
+  await setDoc(requestRef, { ...request, status: 'accepted' });
+  
+  // Create connection for both users
+  const connection1Ref = doc(collection(db, 'connections'));
+  await setDoc(connection1Ref, {
+    userId: request.fromUserId,
+    connectedUserId: request.toUserId,
+    connectedUsername: request.toUsername,
+    connectedDisplayName: (await getUserProfile(request.toUserId))?.displayName || '',
+    connectedAt: Timestamp.now()
+  });
+  
+  const connection2Ref = doc(collection(db, 'connections'));
+  await setDoc(connection2Ref, {
+    userId: request.toUserId,
+    connectedUserId: request.fromUserId,
+    connectedUsername: request.fromUsername,
+    connectedDisplayName: request.fromDisplayName,
+    connectedAt: Timestamp.now()
+  });
+};
+
+/**
+ * Reject a connection request
+ */
+export const rejectConnectionRequest = async (requestId: string): Promise<void> => {
+  const requestRef = doc(db, 'connectionRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Request not found');
+  }
+  
+  const request = requestSnap.data() as ConnectionRequest;
+  await setDoc(requestRef, { ...request, status: 'rejected' });
+};
+
+/**
+ * Get all connections for current user
+ */
+export const getConnections = async (): Promise<Connection[]> => {
+  if (!auth.currentUser) return [];
+  
+  const connectionsRef = collection(db, 'connections');
+  const q = query(connectionsRef, where('userId', '==', auth.currentUser.uid));
+  const snapshot = await getDocs(q);
+  
+  return snapshot.docs.map(doc => doc.data() as Connection);
+};
+
+/**
+ * Check if current user is connected to another user
+ */
+export const checkConnection = async (userId: string): Promise<boolean> => {
+  if (!auth.currentUser) return false;
+  
+  const connectionsRef = collection(db, 'connections');
+  const q = query(
+    connectionsRef,
+    where('userId', '==', auth.currentUser.uid),
+    where('connectedUserId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  
+  return !snapshot.empty;
 };

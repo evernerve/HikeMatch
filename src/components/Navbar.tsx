@@ -62,6 +62,16 @@ export default function Navbar() {
               📊 My Swipes
             </Link>
             <Link
+              to="/connections"
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                location.pathname === '/connections'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              👥 Connections
+            </Link>
+            <Link
               to="/matches"
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 location.pathname === '/matches'

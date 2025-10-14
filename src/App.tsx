@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Matches from './pages/Matches';
 import MySwipes from './pages/MySwipes';
+import Connections from './pages/Connections';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -62,6 +63,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/my-swipes" element={<MySwipes />} />
+          <Route path="/connections" element={<Connections />} />
           <Route path="/matches" element={<Matches />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,36 +1,47 @@
 import { useState, useEffect } from 'react';
-import { Match, subscribeToMatches, getUserProfile } from '../lib/firestoreHelpers';
+import { Match, subscribeToMatches, getConnections } from '../lib/firestoreHelpers';
 import { auth } from '../lib/firebase';
 
 export default function Matches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [matchUserNames, setMatchUserNames] = useState<{ [key: string]: string }>({});
+  const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!auth.currentUser) return;
 
+    loadConnectionsAndMatches();
+
     // Subscribe to real-time match updates
     const unsubscribe = subscribeToMatches(auth.currentUser.uid, async (newMatches) => {
-      setMatches(newMatches);
+      // Filter matches to only show those with connected users
+      const filteredMatches = newMatches.filter(match => {
+        // Check if any other user in the match is connected
+        return match.userIds.some(uid => 
+          uid !== auth.currentUser?.uid && connectedUserIds.has(uid)
+        );
+      });
       
-      // Fetch display names for matched users
-      const names: { [key: string]: string } = {};
-      for (const match of newMatches) {
-        const otherUserId = match.userIds.find(id => id !== auth.currentUser?.uid);
-        if (otherUserId && !names[otherUserId]) {
-          const profile = await getUserProfile(otherUserId);
-          if (profile) {
-            names[otherUserId] = profile.displayName;
-          }
-        }
-      }
-      setMatchUserNames(prev => ({ ...prev, ...names }));
+      setMatches(filteredMatches);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [connectedUserIds]);
+
+  const loadConnectionsAndMatches = async () => {
+    if (!auth.currentUser) return;
+
+    try {
+      // Load connections
+      const connections = await getConnections();
+      const connectedIds = new Set(connections.map(c => c.connectedUserId));
+      setConnectedUserIds(connectedIds);
+    } catch (error) {
+      console.error('Error loading connections:', error);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -52,8 +63,16 @@ export default function Matches() {
             No matches yet
           </h2>
           <p className="text-gray-600 mb-6">
-            Keep swiping on trails! When you and your friends both like the same trail, it'll appear here.
+            {connectedUserIds.size === 0 
+              ? "Connect with friends first, then start swiping on trails together!"
+              : "Keep swiping on trails! When you and your friends both like the same trail, it'll appear here."
+            }
           </p>
+          {connectedUserIds.size === 0 && (
+            <a href="/connections" className="btn-primary inline-block mb-4">
+              👥 Go to Connections
+            </a>
+          )}
         </div>
       </div>
     );
@@ -85,8 +104,9 @@ export default function Matches() {
         {/* Matches Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {matches.map((match, index) => {
-            const otherUserId = match.userIds.find(id => id !== auth.currentUser?.uid);
-            const otherUserName = otherUserId ? matchUserNames[otherUserId] || 'Another hiker' : 'Friend';
+            // Get all usernames who liked this trail (excluding current user)
+            const otherUsers = match.userProfiles?.filter(p => p.uid !== auth.currentUser?.uid) || [];
+            const usernames = otherUsers.map(u => `@${u.username}`).join(', ');
             
             return (
               <div
@@ -116,10 +136,13 @@ export default function Matches() {
                     {match.trail?.name || 'Trail'}
                   </h3>
                   
-                  <div className="flex items-center space-x-2 mb-3">
-                    <span className="text-2xl">💚</span>
-                    <p className="text-gray-600 text-sm">
-                      You and <span className="font-semibold text-primary">{otherUserName}</span> both liked this trail!
+                  {/* Who Liked */}
+                  <div className="mb-3 p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm text-gray-700 mb-1">
+                      <span className="font-semibold">💚 Liked by:</span>
+                    </p>
+                    <p className="text-sm text-primary font-medium">
+                      {usernames || 'Friends'}
                     </p>
                   </div>
 
