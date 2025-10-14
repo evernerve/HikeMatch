@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { Trail, getTrailById } from '../lib/firestoreHelpers';
+import ConfirmModal from '../components/ConfirmModal';
+import Toast from '../components/Toast';
 
 interface SwipeWithTrail {
   trailId: string;
@@ -14,6 +16,9 @@ export default function MySwipes() {
   const [swipes, setSwipes] = useState<SwipeWithTrail[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [deleteTrailId, setDeleteTrailId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     loadSwipes();
@@ -51,15 +56,10 @@ export default function MySwipes() {
     }
   };
 
-  const handleResetAllSwipes = async () => {
+  const confirmResetAllSwipes = async () => {
     if (!auth.currentUser) return;
-    
-    const confirmed = window.confirm(
-      '⚠️ Are you sure you want to reset ALL your swipes? This will delete all your swipes and matches. This action cannot be undone!'
-    );
 
-    if (!confirmed) return;
-
+    setShowResetModal(false);
     setResetting(true);
 
     try {
@@ -85,29 +85,25 @@ export default function MySwipes() {
       }
 
       setSwipes([]);
-      alert('✅ All swipes and matches reset! You can start fresh.');
+      setToast({ message: 'All swipes and matches reset! You can start fresh.', type: 'success' });
     } catch (error) {
       console.error('Error resetting swipes:', error);
-      alert('❌ Failed to reset swipes. Please try again.');
+      setToast({ message: 'Failed to reset swipes. Please try again.', type: 'error' });
     } finally {
       setResetting(false);
     }
   };
 
-  const handleDeleteSwipe = async (trailId: string) => {
-    if (!auth.currentUser) return;
+  const confirmDeleteSwipe = async () => {
+    if (!auth.currentUser || !deleteTrailId) return;
 
-    const confirmed = window.confirm(
-      '🗑️ Delete this swipe? You can swipe on this trail again.'
-    );
-
-    if (!confirmed) return;
+    setDeleteTrailId(null);
 
     try {
       const userId = auth.currentUser.uid;
 
       // Delete the swipe
-      await deleteDoc(doc(db, 'userSwipes', userId, 'swipes', trailId));
+      await deleteDoc(doc(db, 'userSwipes', userId, 'swipes', deleteTrailId));
 
       // Delete any matches involving this user and trail
       const matchesRef = collection(db, 'matches');
@@ -115,17 +111,17 @@ export default function MySwipes() {
       
       for (const matchDoc of matchesSnapshot.docs) {
         const matchData = matchDoc.data();
-        if (matchData.trailId === trailId && matchData.userIds?.includes(userId)) {
+        if (matchData.trailId === deleteTrailId && matchData.userIds?.includes(userId)) {
           await deleteDoc(doc(db, 'matches', matchDoc.id));
         }
       }
 
       // Update UI
-      setSwipes(swipes.filter(s => s.trailId !== trailId));
-      alert('✅ Swipe deleted!');
+      setSwipes(swipes.filter(s => s.trailId !== deleteTrailId));
+      setToast({ message: 'Swipe deleted!', type: 'success' });
     } catch (error) {
       console.error('Error deleting swipe:', error);
-      alert('❌ Failed to delete swipe. Please try again.');
+      setToast({ message: 'Failed to delete swipe. Please try again.', type: 'error' });
     }
   };
 
@@ -174,7 +170,7 @@ export default function MySwipes() {
           {/* Reset Button */}
           {swipes.length > 0 && (
             <button
-              onClick={handleResetAllSwipes}
+              onClick={() => setShowResetModal(true)}
               disabled={resetting}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -223,7 +219,7 @@ export default function MySwipes() {
                                 <span>⏱️ {swipe.trail.durationHours} hrs</span>
                               </div>
                               <button
-                                onClick={() => handleDeleteSwipe(swipe.trailId)}
+                                onClick={() => setDeleteTrailId(swipe.trailId)}
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition"
                                 title="Delete this swipe"
                               >
@@ -264,7 +260,7 @@ export default function MySwipes() {
                                 <span>⏱️ {swipe.trail.durationHours} hrs</span>
                               </div>
                               <button
-                                onClick={() => handleDeleteSwipe(swipe.trailId)}
+                                onClick={() => setDeleteTrailId(swipe.trailId)}
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition"
                                 title="Delete this swipe"
                               >
@@ -282,6 +278,39 @@ export default function MySwipes() {
           </>
         )}
       </div>
+
+      {/* Modals */}
+      <ConfirmModal
+        isOpen={showResetModal}
+        title="Reset All Swipes?"
+        message="This will delete all your swipes and matches. This action cannot be undone!"
+        confirmText="Reset All"
+        cancelText="Cancel"
+        onConfirm={confirmResetAllSwipes}
+        onCancel={() => setShowResetModal(false)}
+        type="warning"
+      />
+
+      <ConfirmModal
+        isOpen={deleteTrailId !== null}
+        title="Delete This Swipe?"
+        message="You can swipe on this trail again after deleting."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteSwipe}
+        onCancel={() => setDeleteTrailId(null)}
+        type="info"
+      />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          isOpen={true}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
