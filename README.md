@@ -1,15 +1,17 @@
-# HikeMatch 🥾
+# SwipeMatch 🎯
 
-A fun swiping Progressive Web App (PWA) where friends can swipe on hiking trails and find mutual matches!
+A multi-category Progressive Web App (PWA) where friends can swipe on hikes, movies, TV shows, and restaurants to find mutual matches!
 
 ## 🎯 Features
 
-- **Swipe Interface**: Swipe right to like trails, left to pass using Tinder-style cards
-- **Real-time Matching**: Instant notifications when you and friends both like the same trail
-- **Authentication**: Simple email/password login with demo user option
+- **Multi-Category Swiping**: Discover and swipe on hikes, movies, TV shows, and restaurants
+- **Category Switching**: Seamlessly switch between different content categories
+- **Swipe Interface**: Swipe right to like, left to pass using Tinder-style cards
+- **Real-time Matching**: Instant notifications when you and friends both like the same item
+- **Authentication**: Simple email/password login
 - **Progressive Web App**: Installable on mobile devices
-- **20 Curated Trails**: Pre-loaded hiking trails with images, descriptions, and details
-- **Responsive Design**: Beautiful UI that works on desktop and mobile
+- **Curated Content**: Pre-loaded trails, movies, TV shows, and restaurants
+- **Responsive Design**: Beautiful UI that works perfectly on desktop and mobile
 
 ## 🔧 Tech Stack
 
