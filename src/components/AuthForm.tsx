@@ -54,10 +54,10 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         {/* Logo/Header */}
         <div className="text-center mb-5 sm:mb-8">
           <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary-500 to-forest-600 rounded-xl sm:rounded-2xl mb-3 sm:mb-4 shadow-nature">
-            <h1 className="text-4xl sm:text-5xl">🏔️</h1>
+            <h1 className="text-4xl sm:text-5xl">✨</h1>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary-600 to-forest-700 bg-clip-text text-transparent mb-1 sm:mb-2">HikeMatch</h1>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">Swipe your way to adventure</p>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary-600 to-forest-700 bg-clip-text text-transparent mb-1 sm:mb-2">SwipeMatch</h1>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">Swipe, Match, Experience Together</p>
         </div>
 
         {/* Toggle between Login/Signup */}

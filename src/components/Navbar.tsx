@@ -35,7 +35,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-1 sm:space-x-2 group">
-            <span className="text-2xl sm:text-3xl transform group-hover:scale-110 transition-transform duration-200">�</span>
+            <span className="text-2xl sm:text-3xl transform group-hover:scale-110 transition-transform duration-200">✨</span>
             <span className="text-lg sm:text-xl font-bold text-white tracking-tight">SwipeMatch</span>
           </Link>
 
@@ -50,7 +50,7 @@ export default function Navbar() {
               }`}
               title="Discover"
             >
-              <span className="text-xl sm:text-base">�</span>
+              <span className="text-xl sm:text-base">✨</span>
               <span className="hidden sm:inline ml-1">Discover</span>
             </Link>
             <Link

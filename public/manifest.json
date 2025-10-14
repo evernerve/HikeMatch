@@ -1,7 +1,7 @@
 {
-  "name": "SwipeMatch",
+  "name": "SwipeMatch - Swipe, Match, Experience Together",
   "short_name": "SwipeMatch",
-  "description": "Discover and match on hikes, movies, TV shows, and restaurants with friends",
+  "description": "Swipe, Match, Experience Together - Discover hikes, movies, TV shows, and restaurants with friends",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

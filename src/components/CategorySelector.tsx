@@ -5,9 +5,10 @@ export default function CategorySelector() {
   const { activeCategory, setActiveCategory } = useCategory();
 
   return (
-    <div className="bg-white shadow-md sticky top-16 z-40">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-2">
+    <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-16 z-40">
+      <div className="max-w-4xl mx-auto px-4 py-4">
+        {/* Modern pill-style tabs */}
+        <div className="flex justify-center items-center gap-2">
           {CATEGORIES.map((category) => {
             const isActive = activeCategory === category.id;
             return (
@@ -15,27 +16,33 @@ export default function CategorySelector() {
                 key={category.id}
                 onClick={() => setActiveCategory(category.id as CategoryType)}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-full font-medium whitespace-nowrap
-                  transition-all duration-200 transform hover:scale-105
+                  group relative flex items-center justify-center 
+                  min-w-[64px] h-16 px-4 rounded-2xl
+                  transition-all duration-300 ease-out
                   ${
                     isActive
-                      ? `${category.color} text-white shadow-lg`
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 scale-105'
+                      : 'bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md border border-gray-100'
                   }
                 `}
               >
-                <span className="text-xl">{category.icon}</span>
-                <span className="text-sm font-semibold">{category.name}</span>
+                {/* Icon with subtle animation */}
+                <span 
+                  className={`
+                    text-3xl transition-transform duration-300
+                    ${isActive ? 'scale-110' : 'group-hover:scale-110'}
+                  `}
+                >
+                  {category.icon}
+                </span>
+                
+                {/* Active indicator dot */}
+                {isActive && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-sm" />
+                )}
               </button>
             );
           })}
-        </div>
-        
-        {/* Category Description */}
-        <div className="mt-3 text-center">
-          <p className="text-sm text-gray-600">
-            {CATEGORIES.find(c => c.id === activeCategory)?.description}
-          </p>
         </div>
       </div>
     </div>
