@@ -267,7 +267,13 @@ export default function TrailCard({ trail }: TrailCardProps) {
           </div>
 
           {/* Content Area */}
-          <div className="absolute inset-0 top-48">
+          <div 
+            className="absolute inset-0 top-48"
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              setIsFlipped(false);
+            }}
+          >
             <div 
               ref={scrollRef}
               className="w-full h-full px-6 py-6 text-white overflow-y-scroll scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
