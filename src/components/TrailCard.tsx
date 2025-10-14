@@ -181,24 +181,10 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
         {/* BACK OF CARD */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden cursor-pointer"
+          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden"
           style={{ 
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
-          }}
-          onClick={() => setIsFlipped(false)}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={(e) => {
-            if (!touchStart) return;
-            const touch = e.changedTouches[0];
-            const deltaX = Math.abs(touch.clientX - touchStart.x);
-            const deltaY = Math.abs(touch.clientY - touchStart.y);
-            const deltaTime = Date.now() - touchStart.time;
-            if (deltaX < 10 && deltaY < 10 && deltaTime < 300) {
-              e.stopPropagation();
-              setIsFlipped(false);
-            }
-            setTouchStart(null);
           }}
         >
           {/* Blurred Background Image */}
@@ -211,8 +197,11 @@ export default function TrailCard({ trail }: TrailCardProps) {
             />
           </div>
 
-          {/* Cover Image with Gradient and Title */}
-          <div className="absolute top-0 left-0 right-0 h-48 z-10">
+          {/* Cover Image with Gradient and Title - clickable to flip back */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-48 z-10 cursor-pointer"
+            onClick={() => setIsFlipped(false)}
+          >
             <img
               src={trail.image}
               alt={trail.name}
