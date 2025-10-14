@@ -228,10 +228,10 @@ export default function TrailCard({ trail }: TrailCardProps) {
           </button>
 
           {/* Content Area */}
-          <div className="relative w-full h-full">
+          <div className="absolute inset-0 top-48">
             <div 
               ref={scrollRef}
-              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
+              className="w-full h-full px-6 py-6 text-white overflow-y-scroll scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
               style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
