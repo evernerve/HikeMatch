@@ -1,8 +1,24 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { logOut } from '../lib/firestoreHelpers';
+import { logOut, getUserProfile } from '../lib/firestoreHelpers';
+import { auth } from '../lib/firebase';
 
 export default function Navbar() {
   const location = useLocation();
+  const [displayName, setDisplayName] = useState<string>('');
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (auth.currentUser) {
+        const profile = await getUserProfile(auth.currentUser.uid);
+        if (profile) {
+          setDisplayName(profile.displayName);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -36,6 +52,16 @@ export default function Navbar() {
               🏔️ Trails
             </Link>
             <Link
+              to="/my-swipes"
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                location.pathname === '/my-swipes'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              📊 My Swipes
+            </Link>
+            <Link
               to="/matches"
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 location.pathname === '/matches'
@@ -45,6 +71,14 @@ export default function Navbar() {
             >
               💚 Matches
             </Link>
+            
+            {/* User Display Name */}
+            {displayName && (
+              <div className="ml-2 px-3 py-2 bg-gray-100 rounded-lg">
+                <span className="text-sm text-gray-700">👤 {displayName}</span>
+              </div>
+            )}
+            
             <button
               onClick={handleLogout}
               className="ml-2 px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition"

@@ -7,6 +7,7 @@ import AuthForm from './components/AuthForm';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Matches from './pages/Matches';
+import MySwipes from './pages/MySwipes';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -60,6 +61,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/my-swipes" element={<MySwipes />} />
           <Route path="/matches" element={<Matches />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
