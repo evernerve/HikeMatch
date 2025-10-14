@@ -32,6 +32,9 @@ export interface Trail {
   publicTransportTime: number; // minutes from Munich Hbf
   scenery: string;
   pathType: string;
+  specialFeature: string; // What makes this trail unique
+  detailedDescription: string; // Extended description for card back
+  highlights: string[]; // Key highlights/attractions
 }
 
 export interface UserProfile {
