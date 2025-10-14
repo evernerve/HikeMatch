@@ -9,6 +9,7 @@ export default function TrailCard({ trail }: TrailCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Smart scroll handler: only prevent swipe when actually scrolling
   useEffect(() => {
@@ -226,6 +227,80 @@ export default function TrailCard({ trail }: TrailCardProps) {
           >
             <span className="text-xl text-white">←</span>
           </button>
+
+          {/* Scroll buttons for mobile */}
+          <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2">
+            <button
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                scrollIntervalRef.current = setInterval(() => {
+                  scrollRef.current?.scrollBy({ top: -5, behavior: 'auto' });
+                }, 16);
+              }}
+              onMouseUp={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              onMouseLeave={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                scrollIntervalRef.current = setInterval(() => {
+                  scrollRef.current?.scrollBy({ top: -5, behavior: 'auto' });
+                }, 16);
+              }}
+              onTouchEnd={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              className="bg-white/20 hover:bg-white/30 rounded-full p-3 shadow-lg transition backdrop-blur-sm active:bg-white/40"
+            >
+              <span className="text-xl text-white">↑</span>
+            </button>
+            <button
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                scrollIntervalRef.current = setInterval(() => {
+                  scrollRef.current?.scrollBy({ top: 5, behavior: 'auto' });
+                }, 16);
+              }}
+              onMouseUp={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              onMouseLeave={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                scrollIntervalRef.current = setInterval(() => {
+                  scrollRef.current?.scrollBy({ top: 5, behavior: 'auto' });
+                }, 16);
+              }}
+              onTouchEnd={() => {
+                if (scrollIntervalRef.current) {
+                  clearInterval(scrollIntervalRef.current);
+                  scrollIntervalRef.current = null;
+                }
+              }}
+              className="bg-white/20 hover:bg-white/30 rounded-full p-3 shadow-lg transition backdrop-blur-sm active:bg-white/40"
+            >
+              <span className="text-xl text-white">↓</span>
+            </button>
+          </div>
 
           {/* Content Area */}
           <div className="absolute inset-0 top-48">
