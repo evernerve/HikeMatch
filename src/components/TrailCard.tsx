@@ -195,11 +195,15 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
           {/* Content Area */}
           <div className="relative w-full h-full">
-            <div className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
-                 style={{ 
-                   scrollbarWidth: 'thin',
-                   scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
-                 }}
+            <div 
+              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
+              style={{ 
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
             >
               <div className="pb-4">
               
