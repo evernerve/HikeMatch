@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { signIn, signUp, signInAsDemo } from '../lib/firestoreHelpers';
+import { signIn, signUp } from '../lib/firestoreHelpers';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -48,23 +48,9 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      await signInAsDemo();
-      onAuthSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Demo login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-100 via-forest-50 to-primary-200 px-3 sm:px-4 py-4">
-      <div className="bg-white/90 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-nature-lg p-5 sm:p-8 w-full max-w-md border border-primary-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-blue-500 px-3 sm:px-4 py-6 sm:py-8">
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-8 w-full max-w-md border border-gray-100">
         {/* Logo/Header */}
         <div className="text-center mb-5 sm:mb-8">
           <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary-500 to-forest-600 rounded-xl sm:rounded-2xl mb-3 sm:mb-4 shadow-nature">
@@ -194,26 +180,6 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
             {loading ? 'Loading...' : isLogin ? 'Login' : 'Sign Up'}
           </button>
         </form>
-
-        {/* Demo Login */}
-        <div className="mt-4 sm:mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-2 bg-white text-gray-500">Or</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="btn-secondary w-full mt-3 sm:mt-4 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-          >
-            🚀 Quick Demo Login
-          </button>
-        </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-500 mt-4 sm:mt-6">
