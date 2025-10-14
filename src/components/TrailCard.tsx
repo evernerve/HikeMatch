@@ -7,6 +7,33 @@ interface TrailCardProps {
 
 export default function TrailCard({ trail }: TrailCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const deltaTime = Date.now() - touchStart.time;
+
+    // Consider it a tap if movement is small and quick
+    if (deltaX < 10 && deltaY < 10 && deltaTime < 300) {
+      e.stopPropagation();
+      setIsFlipped(true);
+    }
+
+    setTouchStart(null);
+  };
 
   return (
     <div 
@@ -25,6 +52,8 @@ export default function TrailCard({ trail }: TrailCardProps) {
           className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden cursor-pointer"
           style={{ backfaceVisibility: 'hidden' }}
           onClick={() => setIsFlipped(true)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Trail Image */}
           <img
@@ -113,6 +142,19 @@ export default function TrailCard({ trail }: TrailCardProps) {
             transform: 'rotateY(180deg)'
           }}
           onClick={() => setIsFlipped(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={(e) => {
+            if (!touchStart) return;
+            const touch = e.changedTouches[0];
+            const deltaX = Math.abs(touch.clientX - touchStart.x);
+            const deltaY = Math.abs(touch.clientY - touchStart.y);
+            const deltaTime = Date.now() - touchStart.time;
+            if (deltaX < 10 && deltaY < 10 && deltaTime < 300) {
+              e.stopPropagation();
+              setIsFlipped(false);
+            }
+            setTouchStart(null);
+          }}
         >
           {/* Blurred Background Image */}
           <div className="absolute inset-0 bg-gray-900">
