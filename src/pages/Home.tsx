@@ -1,34 +1,38 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import TinderCard from 'react-tinder-card';
-import { Trail, getUnswipedTrails, recordSwipe } from '../lib/firestoreHelpers';
+import { getUnswipedCategoryItems, recordCategorySwipe } from '../lib/firestoreHelpers';
+import { SwipeItem } from '../types/categories';
 import { auth } from '../lib/firebase';
-import TrailCard from '../components/TrailCard';
+import { useCategory } from '../context/CategoryContext';
+import CategoryCard from '../components/CategoryCard';
 import CategorySelector from '../components/CategorySelector';
 
 export default function Home() {
-  const [trails, setTrails] = useState<Trail[]>([]);
+  const { activeCategory } = useCategory();
+  const [items, setItems] = useState<SwipeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastDirection, setLastDirection] = useState<string>('');
 
   useEffect(() => {
-    loadTrails();
-  }, []);
+    loadItems();
+  }, [activeCategory]); // Reload when category changes
 
-  const loadTrails = async () => {
+  const loadItems = async () => {
+    setLoading(true);
     try {
       if (!auth.currentUser) return;
-      const unswipedTrails = await getUnswipedTrails(auth.currentUser.uid);
-      setTrails(unswipedTrails);
-      setCurrentIndex(unswipedTrails.length - 1);
+      const unswipedItems = await getUnswipedCategoryItems(auth.currentUser.uid, activeCategory);
+      setItems(unswipedItems);
+      setCurrentIndex(unswipedItems.length - 1);
     } catch (error) {
-      console.error('Error loading trails:', error);
+      console.error('Error loading items:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const swiped = async (direction: string, trail: Trail) => {
+  const swiped = async (direction: string, item: SwipeItem) => {
     setLastDirection(direction);
     
     if (!auth.currentUser) return;
@@ -36,7 +40,7 @@ export default function Home() {
     const liked = direction === 'right';
     
     try {
-      await recordSwipe(auth.currentUser.uid, trail.id, liked);
+      await recordCategorySwipe(auth.currentUser.uid, item.id, activeCategory, liked);
     } catch (error) {
       console.error('Error recording swipe:', error);
     }
@@ -51,14 +55,14 @@ export default function Home() {
   // Memoize card refs to prevent unnecessary re-renders
   const childRefs = useMemo(
     () =>
-      Array(trails.length)
+      Array(items.length)
         .fill(0)
         .map(() => React.createRef()),
-    [trails.length]
+    [items.length]
   );
 
   const swipe = async (dir: string) => {
-    if (canSwipe && currentIndex < trails.length) {
+    if (canSwipe && currentIndex < items.length) {
       // @ts-ignore
       await childRefs[currentIndex].current.swipe(dir);
     }
@@ -75,22 +79,22 @@ export default function Home() {
     );
   }
 
-  if (!canSwipe && trails.length === 0) {
+  if (!canSwipe && items.length === 0) {
     return (
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <span className="text-6xl mb-4 block">🎉</span>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            You've seen all the trails!
+            You've seen everything in this category!
           </h2>
           <p className="text-gray-600 mb-6">
-            Check your matches to see which trails your friends loved too!
+            Check your matches or switch to another category!
           </p>
           <button
-            onClick={loadTrails}
+            onClick={loadItems}
             className="btn-primary"
           >
-            🔄 Reload Trails
+            🔄 Reload Items
           </button>
         </div>
       </div>
@@ -106,7 +110,7 @@ export default function Home() {
         <div className="max-w-md mx-auto">
         {/* Cards Container */}
         <div className="relative h-[500px] sm:h-[600px] mb-4">
-          {trails.map((trail, index) => {
+          {items.map((item, index) => {
             // Only render cards that are close to being shown (current card and next 2)
             const shouldRender = index >= currentIndex - 2 && index <= currentIndex;
             
@@ -116,13 +120,13 @@ export default function Home() {
               <TinderCard
                 // @ts-ignore
                 ref={childRefs[index]}
-                key={trail.id}
-                onSwipe={(dir) => swiped(dir, trail)}
+                key={item.id}
+                onSwipe={(dir) => swiped(dir, item)}
                 onCardLeftScreen={() => outOfFrame(index)}
                 preventSwipe={['up', 'down']}
                 className="absolute w-full"
               >
-                <TrailCard trail={trail} />
+                <CategoryCard item={item} />
               </TinderCard>
             );
           })}
@@ -169,11 +173,11 @@ export default function Home() {
         <div className="text-center">
           {lastDirection && (
             <p className="text-sm text-gray-600 font-medium mb-1">
-              You {lastDirection === 'right' ? 'liked ❤️' : 'passed ➡️'} this trail
+              You {lastDirection === 'right' ? 'liked ❤️' : 'passed ➡️'} this item
             </p>
           )}
           <p className="text-gray-500 text-sm">
-            {canSwipe ? currentIndex + 1 : 0} / {trails.length} trails remaining
+            {canSwipe ? currentIndex + 1 : 0} / {items.length} items remaining
           </p>
         </div>
         </div>
