@@ -10,32 +10,43 @@ export default function TrailCard({ trail }: TrailCardProps) {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Prevent parent from handling touch events on scroll area
+  // Smart scroll handler: only prevent swipe when actually scrolling
   useEffect(() => {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
     let startY = 0;
-    let startX = 0;
+    let isScrollableContent = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
-      startX = e.touches[0].clientX;
+      // Check if content is scrollable (has overflow)
+      isScrollableContent = scrollElement.scrollHeight > scrollElement.clientHeight;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      const deltaY = Math.abs(e.touches[0].clientY - startY);
-      const deltaX = Math.abs(e.touches[0].clientX - startX);
+      if (!isScrollableContent) return; // If not scrollable, allow swipe
       
-      // If moving more vertically than horizontally, it's a scroll - allow it and block swipe
-      if (deltaY > deltaX) {
-        e.stopPropagation(); // Stop swipe from triggering
-        // Don't preventDefault - allow native scroll
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+      const isAtTop = scrollElement.scrollTop === 0;
+      const isAtBottom = Math.abs(scrollElement.scrollHeight - scrollElement.clientHeight - scrollElement.scrollTop) < 1;
+      
+      // Only block swipe if we're in the middle of scrollable content
+      // OR if trying to scroll down when not at top
+      // OR if trying to scroll up when not at bottom
+      const shouldBlockSwipe = 
+        (!isAtTop && !isAtBottom) || // In middle of scroll
+        (deltaY < 0 && !isAtBottom) || // Scrolling down, not at bottom
+        (deltaY > 0 && !isAtTop); // Scrolling up, not at top
+      
+      if (shouldBlockSwipe) {
+        e.stopPropagation(); // Block swipe
       }
     };
 
     scrollElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: true });
     
     return () => {
       scrollElement.removeEventListener('touchstart', handleTouchStart);
@@ -67,16 +78,6 @@ export default function TrailCard({ trail }: TrailCardProps) {
     }
 
     setTouchStart(null);
-  };
-
-  const handleScrollTouchStart = (e: React.TouchEvent) => {
-    // Mark touch start for tap detection
-    const touch = e.touches[0];
-    setTouchStart({
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now()
-    });
   };
 
   return (
@@ -238,20 +239,16 @@ export default function TrailCard({ trail }: TrailCardProps) {
           </button>
 
           {/* Content Area */}
-          <div className="relative w-full h-full pointer-events-none">
+          <div className="relative w-full h-full">
             <div 
               ref={scrollRef}
-              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent pointer-events-auto"
+              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
               style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
                 touchAction: 'pan-y', // Only allow vertical scrolling
-                WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
-              }}
-              onTouchStart={handleScrollTouchStart}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                setTouchStart(null);
+                WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                overscrollBehavior: 'contain' // Prevent scroll chaining
               }}
             >
               <div className="pb-4">
