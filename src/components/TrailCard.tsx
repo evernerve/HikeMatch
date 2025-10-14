@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Trail } from '../lib/firestoreHelpers';
 
 interface TrailCardProps {
@@ -10,50 +10,6 @@ export default function TrailCard({ trail }: TrailCardProps) {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Smart scroll handler: only prevent swipe when actually scrolling
-  useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (!scrollElement) return;
-
-    let startY = 0;
-    let isScrollableContent = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-      // Check if content is scrollable (has overflow)
-      isScrollableContent = scrollElement.scrollHeight > scrollElement.clientHeight;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isScrollableContent) return; // If not scrollable, allow swipe
-      
-      const currentY = e.touches[0].clientY;
-      const deltaY = currentY - startY;
-      const isAtTop = scrollElement.scrollTop === 0;
-      const isAtBottom = Math.abs(scrollElement.scrollHeight - scrollElement.clientHeight - scrollElement.scrollTop) < 1;
-      
-      // Only block swipe if we're in the middle of scrollable content
-      // OR if trying to scroll down when not at top
-      // OR if trying to scroll up when not at bottom
-      const shouldBlockSwipe = 
-        (!isAtTop && !isAtBottom) || // In middle of scroll
-        (deltaY < 0 && !isAtBottom) || // Scrolling down, not at bottom
-        (deltaY > 0 && !isAtTop); // Scrolling up, not at top
-      
-      if (shouldBlockSwipe) {
-        e.stopPropagation(); // Block swipe
-      }
-    };
-
-    scrollElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: true });
-    
-    return () => {
-      scrollElement.removeEventListener('touchstart', handleTouchStart);
-      scrollElement.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [isFlipped]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
