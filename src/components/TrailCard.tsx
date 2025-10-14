@@ -23,28 +23,58 @@ export default function TrailCard({ trail }: TrailCardProps) {
       <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
         <h2 className="text-3xl font-bold mb-3">{trail.name}</h2>
         
-        <p className="text-sm mb-4 line-clamp-3 text-gray-200">
+        <p className="text-sm mb-4 line-clamp-2 text-gray-200">
           {trail.description}
         </p>
 
-        {/* Trail Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-black/40 rounded-lg p-3">
-            <div className="text-xs text-gray-200 mb-1">Distance</div>
-            <div className="text-lg font-semibold">{trail.lengthKm} km</div>
+        {/* Trail Stats - Icon Only Grid */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {/* Distance */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">🚶‍♂️</span>
+            <span className="text-xs font-medium text-gray-800">{trail.lengthKm} km</span>
           </div>
-          <div className="bg-black/40 rounded-lg p-3">
-            <div className="text-xs text-gray-200 mb-1">Duration</div>
-            <div className="text-lg font-semibold">{trail.durationHours} hrs</div>
+          
+          {/* Duration */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">⏱️</span>
+            <span className="text-xs font-medium text-gray-800">{trail.durationHours} hrs</span>
+          </div>
+          
+          {/* Elevation */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">⛰️</span>
+            <span className="text-xs font-medium text-gray-800">{trail.elevationGainM} m</span>
+          </div>
+          
+          {/* Difficulty */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">{trail.difficulty === 'easy' ? '🟢' : trail.difficulty === 'moderate' ? '🟡' : '🔴'}</span>
+            <span className="text-xs font-medium text-gray-800 capitalize">{trail.difficulty}</span>
           </div>
         </div>
 
-        {/* Tags */}
+        {/* Location & Transport - Icon Only */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {/* Location */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">📍</span>
+            <span className="text-xs font-medium text-gray-800">{trail.location}</span>
+          </div>
+          
+          {/* Transport Time */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <span className="text-base">🚂</span>
+            <span className="text-xs font-medium text-gray-800">{trail.publicTransportTime} min</span>
+          </div>
+        </div>
+
+        {/* Trail Type Tags */}
         <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-green-600 rounded-full text-xs font-medium">
+          <span className="px-2.5 py-1 bg-green-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
             {trail.pathType}
           </span>
-          <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
+          <span className="px-2.5 py-1 bg-blue-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
             {trail.scenery}
           </span>
         </div>

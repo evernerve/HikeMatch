@@ -25,6 +25,11 @@ export interface Trail {
   description: string;
   lengthKm: number;
   durationHours: number;
+  difficulty: 'easy' | 'moderate' | 'difficult';
+  elevationGainM: number;
+  location: string;
+  distanceFromMunichKm: number;
+  publicTransportTime: number; // minutes from Munich Hbf
   scenery: string;
   pathType: string;
 }
