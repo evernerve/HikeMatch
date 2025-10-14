@@ -12,10 +12,8 @@ import {
   getDocs,
   query,
   where,
-  updateDoc,
   Timestamp,
   onSnapshot,
-  DocumentData,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 

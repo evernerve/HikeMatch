@@ -27,7 +27,7 @@ export default function Home() {
     }
   };
 
-  const swiped = async (direction: string, trail: Trail, index: number) => {
+  const swiped = async (direction: string, trail: Trail) => {
     setLastDirection(direction);
     
     if (!auth.currentUser) return;
@@ -116,7 +116,7 @@ export default function Home() {
               // @ts-ignore
               ref={childRefs[index]}
               key={trail.id}
-              onSwipe={(dir) => swiped(dir, trail, index)}
+              onSwipe={(dir) => swiped(dir, trail)}
               onCardLeftScreen={() => outOfFrame(index)}
               preventSwipe={['up', 'down']}
               className="absolute w-full"
