@@ -1,32 +1,42 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { Trail, getTrailById } from '../lib/firestoreHelpers';
+import { collection, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { useCategory } from '../context/CategoryContext';
+import { SwipeItem, CategoryType } from '../types/categories';
 import CategorySelector from '../components/CategorySelector';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
 
-interface SwipeWithTrail {
-  trailId: string;
+interface SwipeWithItem {
+  itemId: string;
   liked: boolean;
   swipedAt: Date;
-  trail?: Trail;
-  category?: string;
+  item?: SwipeItem;
+  category: CategoryType;
 }
 
 export default function MySwipes() {
   const { activeCategory } = useCategory();
-  const [swipes, setSwipes] = useState<SwipeWithTrail[]>([]);
+  const [swipes, setSwipes] = useState<SwipeWithItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
-  const [deleteTrailId, setDeleteTrailId] = useState<string | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     loadSwipes();
   }, []);
+
+  const getCategoryCollection = (category: CategoryType): string => {
+    switch (category) {
+      case 'hikes': return 'trails';
+      case 'movies': return 'movies';
+      case 'tv': return 'tvShows';
+      case 'restaurants': return 'restaurants';
+      default: return 'trails';
+    }
+  };
 
   const loadSwipes = async () => {
     if (!auth.currentUser) return;
@@ -35,18 +45,30 @@ export default function MySwipes() {
       const swipesRef = collection(db, 'userSwipes', auth.currentUser.uid, 'swipes');
       const swipesSnapshot = await getDocs(swipesRef);
 
-      const swipesData: SwipeWithTrail[] = [];
+      const swipesData: SwipeWithItem[] = [];
       
       for (const swipeDoc of swipesSnapshot.docs) {
         const swipeData = swipeDoc.data();
-        const trail = await getTrailById(swipeDoc.id);
+        const category = (swipeData.category || 'hikes') as CategoryType;
+        const collectionName = getCategoryCollection(category);
+        
+        // Fetch the actual item from the appropriate collection
+        let item: SwipeItem | undefined;
+        try {
+          const itemDoc = await getDoc(doc(db, collectionName, swipeDoc.id));
+          if (itemDoc.exists()) {
+            item = { id: itemDoc.id, ...itemDoc.data() } as SwipeItem;
+          }
+        } catch (error) {
+          console.error(`Error fetching item ${swipeDoc.id}:`, error);
+        }
         
         swipesData.push({
-          trailId: swipeDoc.id,
+          itemId: swipeDoc.id,
           liked: swipeData.liked,
           swipedAt: swipeData.swipedAt?.toDate() || new Date(),
-          trail: trail || undefined,
-          category: swipeData.category || 'hikes', // Backward compatibility
+          item,
+          category,
         });
       }
 
@@ -100,29 +122,29 @@ export default function MySwipes() {
   };
 
   const confirmDeleteSwipe = async () => {
-    if (!auth.currentUser || !deleteTrailId) return;
+    if (!auth.currentUser || !deleteItemId) return;
 
-    setDeleteTrailId(null);
+    setDeleteItemId(null);
 
     try {
       const userId = auth.currentUser.uid;
 
       // Delete the swipe
-      await deleteDoc(doc(db, 'userSwipes', userId, 'swipes', deleteTrailId));
+      await deleteDoc(doc(db, 'userSwipes', userId, 'swipes', deleteItemId));
 
-      // Delete any matches involving this user and trail
+      // Delete any matches involving this user and item
       const matchesRef = collection(db, 'matches');
       const matchesSnapshot = await getDocs(matchesRef);
       
       for (const matchDoc of matchesSnapshot.docs) {
         const matchData = matchDoc.data();
-        if (matchData.trailId === deleteTrailId && matchData.userIds?.includes(userId)) {
+        if (matchData.trailId === deleteItemId && matchData.userIds?.includes(userId)) {
           await deleteDoc(doc(db, 'matches', matchDoc.id));
         }
       }
 
       // Update UI
-      setSwipes(swipes.filter(s => s.trailId !== deleteTrailId));
+      setSwipes(swipes.filter(s => s.itemId !== deleteItemId));
       setToast({ message: 'Swipe deleted!', type: 'success' });
     } catch (error) {
       console.error('Error deleting swipe:', error);
@@ -145,6 +167,54 @@ export default function MySwipes() {
   const filteredSwipes = swipes.filter(s => s.category === activeCategory);
   const likedSwipes = filteredSwipes.filter(s => s.liked);
   const passedSwipes = filteredSwipes.filter(s => !s.liked);
+
+  // Render category-specific metadata
+  const renderItemMetadata = (item: SwipeItem) => {
+    const hikeData = item.categoryData && 'lengthKm' in item.categoryData ? item.categoryData : null;
+    const movieData = item.categoryData && 'runtime' in item.categoryData && 'director' in item.categoryData ? item.categoryData : null;
+    const tvData = item.categoryData && 'seasons' in item.categoryData && 'episodes' in item.categoryData ? item.categoryData : null;
+    const restaurantData = item.categoryData && 'cuisine' in item.categoryData && 'priceRange' in item.categoryData ? item.categoryData : null;
+
+    if (hikeData) {
+      return (
+        <>
+          <span>📏 {hikeData.lengthKm} km</span>
+          <span>⏱️ {hikeData.durationHours} hrs</span>
+        </>
+      );
+    }
+
+    if (movieData) {
+      return (
+        <>
+          <span>📅 {movieData.year}</span>
+          <span>⏱️ {movieData.runtime} min</span>
+          <span>⭐ {movieData.rating}/10</span>
+        </>
+      );
+    }
+
+    if (tvData) {
+      return (
+        <>
+          <span>📺 {tvData.seasons} seasons</span>
+          <span>⭐ {tvData.rating}/10</span>
+        </>
+      );
+    }
+
+    if (restaurantData) {
+      return (
+        <>
+          <span>💰 {restaurantData.priceRange}</span>
+          <span>⭐ {restaurantData.rating}/5</span>
+          <span>📍 {restaurantData.location}</span>
+        </>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50">
@@ -190,14 +260,14 @@ export default function MySwipes() {
           )}
         </div>
 
-        {swipes.length === 0 ? (
+        {filteredSwipes.length === 0 ? (
           <div className="text-center py-8 sm:py-12">
             <span className="text-5xl sm:text-6xl mb-3 sm:mb-4 block">👋</span>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              No swipes yet
+              No swipes in this category yet
             </h2>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Start swiping on trails to see them here!
+              Start swiping to see items here!
             </p>
             <a href="/" className="btn-primary inline-block text-sm sm:text-base">
               ← Start Swiping
@@ -205,33 +275,32 @@ export default function MySwipes() {
           </div>
         ) : (
           <>
-            {/* Liked Trails */}
+            {/* Liked Items */}
             {likedSwipes.length > 0 && (
               <div className="mb-6 sm:mb-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">💚 Trails You Liked</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">💚 Items You Liked</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {likedSwipes.map((swipe) => (
-                    <div key={swipe.trailId} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition relative">
-                      {swipe.trail && (
+                    <div key={swipe.itemId} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition relative">
+                      {swipe.item && (
                         <>
                           <img
-                            src={swipe.trail.image}
-                            alt={swipe.trail.name}
+                            src={swipe.item.image}
+                            alt={swipe.item.name}
                             className="w-full h-28 sm:h-32 object-cover"
                             loading="lazy"
                           />
                           <div className="p-3 sm:p-4">
-                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.trail.name}</h3>
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.item.name}</h3>
                             <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
-                              {swipe.trail.description}
+                              {swipe.item.description}
                             </p>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-500">
-                                <span>📏 {swipe.trail.lengthKm} km</span>
-                                <span>⏱️ {swipe.trail.durationHours} hrs</span>
+                                {renderItemMetadata(swipe.item)}
                               </div>
                               <button
-                                onClick={() => setDeleteTrailId(swipe.trailId)}
+                                onClick={() => setDeleteItemId(swipe.itemId)}
                                 className="text-red-500 hover:text-red-700 active:text-red-800 hover:bg-red-50 p-1.5 sm:p-2 rounded transition text-base sm:text-lg"
                                 title="Delete this swipe"
                               >
@@ -247,33 +316,32 @@ export default function MySwipes() {
               </div>
             )}
 
-            {/* Passed Trails */}
+            {/* Passed Items */}
             {passedSwipes.length > 0 && (
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">⏭️ Trails You Passed</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">⏭️ Items You Passed</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {passedSwipes.map((swipe) => (
-                    <div key={swipe.trailId} className="bg-white rounded-lg shadow-md overflow-hidden opacity-75 hover:opacity-100 transition relative">
-                      {swipe.trail && (
+                    <div key={swipe.itemId} className="bg-white rounded-lg shadow-md overflow-hidden opacity-75 hover:opacity-100 transition relative">
+                      {swipe.item && (
                         <>
                           <img
-                            src={swipe.trail.image}
-                            alt={swipe.trail.name}
+                            src={swipe.item.image}
+                            alt={swipe.item.name}
                             className="w-full h-28 sm:h-32 object-cover grayscale"
                             loading="lazy"
                           />
                           <div className="p-3 sm:p-4">
-                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.trail.name}</h3>
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.item.name}</h3>
                             <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
-                              {swipe.trail.description}
+                              {swipe.item.description}
                             </p>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-500">
-                                <span>📏 {swipe.trail.lengthKm} km</span>
-                                <span>⏱️ {swipe.trail.durationHours} hrs</span>
+                                {renderItemMetadata(swipe.item)}
                               </div>
                               <button
-                                onClick={() => setDeleteTrailId(swipe.trailId)}
+                                onClick={() => setDeleteItemId(swipe.itemId)}
                                 className="text-red-500 hover:text-red-700 active:text-red-800 hover:bg-red-50 p-1.5 sm:p-2 rounded transition text-base sm:text-lg"
                                 title="Delete this swipe"
                               >
@@ -305,13 +373,13 @@ export default function MySwipes() {
       />
 
       <ConfirmModal
-        isOpen={deleteTrailId !== null}
+        isOpen={deleteItemId !== null}
         title="Delete This Swipe?"
-        message="You can swipe on this trail again after deleting."
+        message="You can swipe on this item again after deleting."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={confirmDeleteSwipe}
-        onCancel={() => setDeleteTrailId(null)}
+        onCancel={() => setDeleteItemId(null)}
         type="info"
       />
 

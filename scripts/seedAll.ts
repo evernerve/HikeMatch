@@ -18,6 +18,7 @@ async function seedAll() {
     // Seed restaurants
     console.log('\n📦 Seeding restaurants...');
     await import('./seedRestaurants');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     console.log('\n✅ All data seeded successfully!');
     console.log('\n📊 Summary:');
