@@ -10,7 +10,7 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
   return (
     <div 
-      className="relative w-full h-[600px] rounded-2xl shadow-2xl"
+      className="relative w-full h-[500px] sm:h-[600px] rounded-2xl shadow-2xl"
       style={{ perspective: '1000px' }}
     >
       <div 
