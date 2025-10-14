@@ -32,6 +32,7 @@ export interface Trail {
 export interface UserProfile {
   uid: string;
   displayName: string;
+  username: string;
   email: string;
   createdAt: Timestamp;
 }
@@ -53,9 +54,25 @@ export interface Match {
 // Authentication Functions
 
 /**
- * Sign up a new user with email and password
+ * Check if username is already taken
  */
-export const signUp = async (email: string, password: string, displayName: string): Promise<User> => {
+export const isUsernameTaken = async (username: string): Promise<boolean> => {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('username', '==', username.toLowerCase()));
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+};
+
+/**
+ * Sign up a new user with username, email and password
+ */
+export const signUp = async (username: string, email: string, password: string, displayName: string): Promise<User> => {
+  // Check if username is taken
+  const usernameTaken = await isUsernameTaken(username);
+  if (usernameTaken) {
+    throw new Error('Username is already taken');
+  }
+
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
@@ -63,6 +80,7 @@ export const signUp = async (email: string, password: string, displayName: strin
   await setDoc(doc(db, 'users', user.uid), {
     uid: user.uid,
     displayName,
+    username: username.toLowerCase(),
     email,
     createdAt: Timestamp.now(),
   });
@@ -71,9 +89,32 @@ export const signUp = async (email: string, password: string, displayName: strin
 };
 
 /**
- * Sign in an existing user
+ * Get email from username
  */
-export const signIn = async (email: string, password: string): Promise<User> => {
+export const getEmailFromUsername = async (username: string): Promise<string | null> => {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('username', '==', username.toLowerCase()));
+  const snapshot = await getDocs(q);
+  
+  if (snapshot.empty) {
+    return null;
+  }
+  
+  const userData = snapshot.docs[0].data();
+  return userData.email;
+};
+
+/**
+ * Sign in an existing user with username and password
+ */
+export const signIn = async (username: string, password: string): Promise<User> => {
+  // Look up email from username
+  const email = await getEmailFromUsername(username);
+  
+  if (!email) {
+    throw new Error('Username not found');
+  }
+  
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   return userCredential.user;
 };
@@ -82,12 +123,15 @@ export const signIn = async (email: string, password: string): Promise<User> => 
  * Demo user login (bypasses authentication for testing)
  */
 export const signInAsDemo = async (): Promise<User> => {
-  // Create a demo account with a fixed email
-  const demoEmail = `demo_${Date.now()}@hikematch.app`;
+  // Create a demo account
+  const timestamp = Date.now();
+  const demoUsername = `demo${timestamp}`;
+  const demoEmail = `demo_${timestamp}@hikematch.app`;
   const demoPassword = 'demo123456';
+  const demoDisplayName = `Demo User ${Math.floor(Math.random() * 1000)}`;
   
   try {
-    return await signUp(demoEmail, demoPassword, `Demo User ${Math.floor(Math.random() * 1000)}`);
+    return await signUp(demoUsername, demoEmail, demoPassword, demoDisplayName);
   } catch (error) {
     console.error('Demo login error:', error);
     throw error;

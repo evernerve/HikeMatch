@@ -7,6 +7,7 @@ interface AuthFormProps {
 
 export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -20,14 +21,24 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
     try {
       if (isLogin) {
-        await signIn(email, password);
+        await signIn(username, password);
       } else {
         if (!displayName.trim()) {
           setError('Display name is required');
           setLoading(false);
           return;
         }
-        await signUp(email, password, displayName);
+        if (!username.trim()) {
+          setError('Username is required');
+          setLoading(false);
+          return;
+        }
+        if (!email.trim()) {
+          setError('Email is required');
+          setLoading(false);
+          return;
+        }
+        await signUp(username, email, password, displayName);
       }
       onAuthSuccess();
     } catch (err: any) {
@@ -94,34 +105,68 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         {/* Auth Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="input-field"
+                  placeholder="Your hiking name"
+                  required={!isLogin}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="input-field"
+                  placeholder="hikerlover123"
+                  required={!isLogin}
+                  pattern="[a-zA-Z0-9_]+"
+                  title="Username can only contain letters, numbers, and underscores"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                  placeholder="you@example.com"
+                  required={!isLogin}
+                />
+              </div>
+            </>
+          )}
+
+          {isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Display Name
+                Username
               </label>
               <input
                 type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="input-field"
-                placeholder="Your hiking name"
-                required={!isLogin}
+                placeholder="hikerlover123"
+                required
               />
             </div>
           )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
