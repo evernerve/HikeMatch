@@ -18,7 +18,7 @@ export const CATEGORIES: CategoryConfig[] = [
     id: 'hikes',
     name: 'Hiking Trails',
     icon: '🏔️',
-    color: 'green',
+    color: 'bg-green-500',
     description: 'Discover amazing hiking trails',
     enabled: true
   },
@@ -26,7 +26,7 @@ export const CATEGORIES: CategoryConfig[] = [
     id: 'movies',
     name: 'Movies',
     icon: '🎬',
-    color: 'red',
+    color: 'bg-red-500',
     description: 'Find movies you\'ll love',
     enabled: true
   },
@@ -34,7 +34,7 @@ export const CATEGORIES: CategoryConfig[] = [
     id: 'tv',
     name: 'TV Shows',
     icon: '📺',
-    color: 'purple',
+    color: 'bg-purple-500',
     description: 'Explore TV shows to binge',
     enabled: true
   },
@@ -42,7 +42,7 @@ export const CATEGORIES: CategoryConfig[] = [
     id: 'restaurants',
     name: 'Restaurants',
     icon: '🍽️',
-    color: 'orange',
+    color: 'bg-orange-500',
     description: 'Discover great places to eat',
     enabled: true
   }
@@ -53,7 +53,7 @@ export const CATEGORIES: CategoryConfig[] = [
 export interface HikeData {
   lengthKm: number;
   durationHours: number;
-  difficulty: 'easy' | 'moderate' | 'hard';
+  difficulty: 'easy' | 'moderate' | 'difficult';
   elevationGainM: number;
   location: string;
   distanceFromMunichKm: number;

@@ -568,3 +568,217 @@ export const checkConnection = async (userId: string): Promise<boolean> => {
   
   return !snapshot.empty;
 };
+
+// ============================================================================
+// MULTI-CATEGORY FUNCTIONS (NEW - Backward Compatible)
+// ============================================================================
+
+import { SwipeItem, CategoryType } from '../types/categories';
+
+/**
+ * Helper to convert Trail to SwipeItem format for backward compatibility
+ */
+export const trailToSwipeItem = (trail: Trail): SwipeItem => {
+  return {
+    id: trail.id,
+    category: 'hikes',
+    name: trail.name,
+    image: trail.image,
+    description: trail.description,
+    categoryData: {
+      lengthKm: trail.lengthKm,
+      durationHours: trail.durationHours,
+      difficulty: trail.difficulty,
+      elevationGainM: trail.elevationGainM,
+      location: trail.location,
+      distanceFromMunichKm: trail.distanceFromMunichKm,
+      publicTransportTime: trail.publicTransportTime,
+      scenery: trail.scenery,
+      pathType: trail.pathType,
+      specialFeature: trail.specialFeature,
+      detailedDescription: trail.detailedDescription,
+      highlights: trail.highlights,
+    }
+  };
+};
+
+/**
+ * Get collection name for a category
+ */
+const getCategoryCollection = (category: CategoryType): string => {
+  // Map categories to their Firestore collections
+  const collectionMap: Record<CategoryType, string> = {
+    'hikes': 'trails',  // Use existing trails collection
+    'movies': 'movies',
+    'tv': 'tvShows',
+    'restaurants': 'restaurants'
+  };
+  return collectionMap[category];
+};
+
+/**
+ * Get all items for a specific category
+ */
+export const getCategoryItems = async (category: CategoryType): Promise<SwipeItem[]> => {
+  const collectionName = getCategoryCollection(category);
+  const itemsRef = collection(db, collectionName);
+  const querySnapshot = await getDocs(itemsRef);
+  
+  if (category === 'hikes') {
+    // Convert trails to SwipeItem format
+    return querySnapshot.docs.map(doc => {
+      const trail = { id: doc.id, ...doc.data() } as Trail;
+      return trailToSwipeItem(trail);
+    });
+  }
+  
+  // For other categories, data is already in SwipeItem format
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as SwipeItem));
+};
+
+/**
+ * Get unswiped items for a specific category
+ */
+export const getUnswipedCategoryItems = async (
+  userId: string,
+  category: CategoryType
+): Promise<SwipeItem[]> => {
+  const allItems = await getCategoryItems(category);
+  const swipedItemIds = await getUserCategorySwipes(userId, category);
+  
+  return allItems.filter(item => !swipedItemIds.includes(item.id));
+};
+
+/**
+ * Get user's swipes for a specific category
+ */
+export const getUserCategorySwipes = async (
+  userId: string,
+  category: CategoryType
+): Promise<string[]> => {
+  const swipesRef = collection(db, 'userSwipes', userId, 'swipes');
+  const q = query(swipesRef, where('category', '==', category));
+  const querySnapshot = await getDocs(q);
+  
+  // Also check old swipes without category field (for backward compatibility with trails)
+  if (category === 'hikes') {
+    const allSwipes = collection(db, 'userSwipes', userId, 'swipes');
+    const allSnapshot = await getDocs(allSwipes);
+    return allSnapshot.docs.map(doc => doc.id);
+  }
+  
+  return querySnapshot.docs.map(doc => doc.id);
+};
+
+/**
+ * Record a user's swipe on an item (category-aware)
+ */
+export const recordCategorySwipe = async (
+  userId: string,
+  itemId: string,
+  category: CategoryType,
+  liked: boolean
+): Promise<void> => {
+  const swipeRef = doc(db, 'userSwipes', userId, 'swipes', itemId);
+  
+  console.log('💾 Recording category swipe:', { userId, itemId, category, liked });
+  
+  await setDoc(swipeRef, {
+    userId,
+    itemId,
+    trailId: itemId, // Keep for backward compatibility
+    category,
+    liked,
+    swipedAt: Timestamp.now(),
+  });
+
+  console.log('✅ Category swipe recorded successfully');
+
+  // Check for matches if the user liked the item
+  if (liked) {
+    console.log('❤️ User liked item, checking for matches...');
+    await checkForCategoryMatches(userId, itemId, category);
+  }
+};
+
+/**
+ * Check for matches in a specific category
+ */
+const checkForCategoryMatches = async (
+  userId: string,
+  itemId: string,
+  category: CategoryType
+): Promise<void> => {
+  console.log('🔍 Checking for category matches:', { userId, itemId, category });
+  
+  // Get all users from the users collection
+  const usersRef = collection(db, 'users');
+  const usersSnapshot = await getDocs(usersRef);
+  
+  console.log('📊 Total users in database:', usersSnapshot.docs.length);
+  
+  const usersWhoLiked: string[] = [];
+  
+  // Check each user to see if they liked this item
+  for (const userDoc of usersSnapshot.docs) {
+    const swipeRef = doc(db, 'userSwipes', userDoc.id, 'swipes', itemId);
+    const swipeSnap = await getDoc(swipeRef);
+    
+    if (swipeSnap.exists() && swipeSnap.data().liked) {
+      usersWhoLiked.push(userDoc.id);
+      console.log('✅ User liked this item:', userDoc.id);
+    }
+  }
+
+  console.log('💚 Users who liked item:', usersWhoLiked.length);
+
+  // Create matches for all pairs of users who liked this item
+  if (usersWhoLiked.length >= 2) {
+    console.log('🎉 Creating matches!');
+    for (let i = 0; i < usersWhoLiked.length; i++) {
+      for (let j = i + 1; j < usersWhoLiked.length; j++) {
+        const user1 = usersWhoLiked[i];
+        const user2 = usersWhoLiked[j];
+        
+        // Create a consistent match ID
+        const matchId = [user1, user2].sort().join('_') + '_' + itemId;
+        
+        // Check if match already exists
+        const matchRef = doc(db, 'matches', matchId);
+        const matchSnap = await getDoc(matchRef);
+        
+        if (!matchSnap.exists()) {
+          // Get user profiles
+          const user1Profile = await getUserProfile(user1);
+          const user2Profile = await getUserProfile(user2);
+          
+          await setDoc(matchRef, {
+            itemId,
+            trailId: itemId, // Keep for backward compatibility
+            category,
+            userIds: [user1, user2],
+            userProfiles: [
+              {
+                uid: user1,
+                username: user1Profile?.username || '',
+                displayName: user1Profile?.displayName || ''
+              },
+              {
+                uid: user2,
+                username: user2Profile?.username || '',
+                displayName: user2Profile?.displayName || ''
+              }
+            ],
+            matchedAt: Timestamp.now(),
+          });
+          console.log('✨ Match created!', { matchId, user1, user2, itemId, category });
+        } else {
+          console.log('ℹ️ Match already exists:', matchId);
+        }
+      }
+    }
+  }
+};
