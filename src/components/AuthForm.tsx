@@ -63,21 +63,24 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-100 via-forest-50 to-primary-200 px-4">
+      <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-nature-lg p-8 w-full max-w-md border border-primary-100">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">🏔️ HikeMatch</h1>
-          <p className="text-gray-600">Swipe your way to adventure</p>
+          <div className="inline-block p-4 bg-gradient-to-br from-primary-500 to-forest-600 rounded-2xl mb-4 shadow-nature">
+            <h1 className="text-5xl">🏔️</h1>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-forest-700 bg-clip-text text-transparent mb-2">HikeMatch</h1>
+          <p className="text-gray-600 font-medium">Swipe your way to adventure</p>
         </div>
 
         {/* Toggle between Login/Signup */}
-        <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+        <div className="flex mb-6 bg-primary-50 rounded-xl p-1.5 border border-primary-200">
           <button
             onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2 rounded-md font-semibold transition ${
+            className={`flex-1 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
               isLogin
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -85,9 +88,9 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
           </button>
           <button
             onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2 rounded-md font-semibold transition ${
+            className={`flex-1 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
               !isLogin
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >

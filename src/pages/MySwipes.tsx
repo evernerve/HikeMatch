@@ -140,7 +140,7 @@ export default function MySwipes() {
   const passedSwipes = swipes.filter(s => !s.liked);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-8 px-4">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

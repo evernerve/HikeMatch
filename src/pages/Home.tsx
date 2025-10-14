@@ -111,19 +111,26 @@ export default function Home() {
 
         {/* Cards Container */}
         <div className="relative h-[600px] mb-6">
-          {trails.map((trail, index) => (
-            <TinderCard
-              // @ts-ignore
-              ref={childRefs[index]}
-              key={trail.id}
-              onSwipe={(dir) => swiped(dir, trail)}
-              onCardLeftScreen={() => outOfFrame(index)}
-              preventSwipe={['up', 'down']}
-              className="absolute w-full"
-            >
-              <TrailCard trail={trail} />
-            </TinderCard>
-          ))}
+          {trails.map((trail, index) => {
+            // Only render cards that are close to being shown (current card and next 2)
+            const shouldRender = index >= currentIndex - 2 && index <= currentIndex;
+            
+            if (!shouldRender) return null;
+            
+            return (
+              <TinderCard
+                // @ts-ignore
+                ref={childRefs[index]}
+                key={trail.id}
+                onSwipe={(dir) => swiped(dir, trail)}
+                onCardLeftScreen={() => outOfFrame(index)}
+                preventSwipe={['up', 'down']}
+                className="absolute w-full"
+              >
+                <TrailCard trail={trail} />
+              </TinderCard>
+            );
+          })}
 
           {/* Empty state when all cards swiped */}
           {!canSwipe && (
