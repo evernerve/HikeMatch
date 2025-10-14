@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { Trail, getTrailById } from '../lib/firestoreHelpers';
+import { useCategory } from '../context/CategoryContext';
+import CategorySelector from '../components/CategorySelector';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
 
@@ -10,9 +12,11 @@ interface SwipeWithTrail {
   liked: boolean;
   swipedAt: Date;
   trail?: Trail;
+  category?: string;
 }
 
 export default function MySwipes() {
+  const { activeCategory } = useCategory();
   const [swipes, setSwipes] = useState<SwipeWithTrail[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
@@ -42,6 +46,7 @@ export default function MySwipes() {
           liked: swipeData.liked,
           swipedAt: swipeData.swipedAt?.toDate() || new Date(),
           trail: trail || undefined,
+          category: swipeData.category || 'hikes', // Backward compatibility
         });
       }
 
@@ -136,19 +141,25 @@ export default function MySwipes() {
     );
   }
 
-  const likedSwipes = swipes.filter(s => s.liked);
-  const passedSwipes = swipes.filter(s => !s.liked);
+  // Filter swipes by active category
+  const filteredSwipes = swipes.filter(s => s.category === activeCategory);
+  const likedSwipes = filteredSwipes.filter(s => s.liked);
+  const passedSwipes = filteredSwipes.filter(s => !s.liked);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-4 sm:py-8 px-2 sm:px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50">
+      {/* Category Selector */}
+      <CategorySelector />
+      
+      <div className="py-4 sm:py-8 px-2 sm:px-4">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-4 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
             📊 My Swipes
           </h1>
           <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
-            View all trails you've swiped on
+            View all items you've swiped on
           </p>
           
           {/* Stats */}
@@ -162,7 +173,7 @@ export default function MySwipes() {
               <div className="text-xs sm:text-sm text-gray-600">Passed ⏭️</div>
             </div>
             <div className="bg-white rounded-lg shadow px-3 sm:px-6 py-2 sm:py-3">
-              <div className="text-xl sm:text-2xl font-bold text-primary">{swipes.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{filteredSwipes.length}</div>
               <div className="text-xs sm:text-sm text-gray-600">Total</div>
             </div>
           </div>
@@ -313,6 +324,7 @@ export default function MySwipes() {
           onClose={() => setToast(null)}
         />
       )}
+      </div>
     </div>
   );
 }

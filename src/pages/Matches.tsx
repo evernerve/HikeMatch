@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Match, subscribeToMatches, getConnections } from '../lib/firestoreHelpers';
 import { auth } from '../lib/firebase';
+import { useCategory } from '../context/CategoryContext';
+import CategorySelector from '../components/CategorySelector';
 
 export default function Matches() {
+  const { activeCategory } = useCategory();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
@@ -78,32 +81,43 @@ export default function Matches() {
     );
   }
 
-  return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-4 sm:py-8 px-2 sm:px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-4 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
-            🎉 Your Matches
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Trails you and your friends both loved
-          </p>
-        </div>
+  // Filter matches by active category
+  const filteredMatches = matches.filter(match => {
+    // If match has category field, filter by it. Otherwise, assume it's a hike (backward compatibility)
+    const matchCategory = (match as any).category || 'hikes';
+    return matchCategory === activeCategory;
+  });
 
-        {/* Match Count */}
-        <div className="bg-white rounded-xl shadow-md p-3 sm:p-4 mb-4 sm:mb-6 text-center">
-          <p className="text-base sm:text-lg">
-            <span className="font-bold text-primary text-xl sm:text-2xl">{matches.length}</span>
-            <span className="text-gray-600 ml-2 text-sm sm:text-base">
-              {matches.length === 1 ? 'match' : 'matches'} found
-            </span>
-          </p>
-        </div>
+  return (
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50">
+      {/* Category Selector */}
+      <CategorySelector />
+      
+      <div className="py-4 sm:py-8 px-2 sm:px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-4 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
+              🎉 Your Matches
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              Items you and your friends both loved
+            </p>
+          </div>
+
+          {/* Match Count */}
+          <div className="bg-white rounded-xl shadow-md p-3 sm:p-4 mb-4 sm:mb-6 text-center">
+            <p className="text-base sm:text-lg">
+              <span className="font-bold text-green-600 text-xl sm:text-2xl">{filteredMatches.length}</span>
+              <span className="text-gray-600 ml-2 text-sm sm:text-base">
+                {filteredMatches.length === 1 ? 'match' : 'matches'} found
+              </span>
+            </p>
+          </div>
 
         {/* Matches Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {matches.map((match, index) => {
+          {filteredMatches.map((match, index) => {
             // Get all usernames who liked this trail (excluding current user)
             const otherUsers = match.userProfiles?.filter(p => p.uid !== auth.currentUser?.uid) || [];
             const usernames = otherUsers.map(u => `@${u.username}`).join(', ');
@@ -190,14 +204,15 @@ export default function Matches() {
         {/* Call to Action */}
         <div className="mt-6 sm:mt-8 text-center">
           <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
-            Want more matches? Keep swiping on trails!
+            Want more matches? Keep swiping!
           </p>
           <a
             href="/"
             className="inline-block btn-primary text-sm sm:text-base"
           >
-            ← Back to Trails
+            ← Back to Discover
           </a>
+        </div>
         </div>
       </div>
     </div>
