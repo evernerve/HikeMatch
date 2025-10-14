@@ -8,6 +8,7 @@ interface TrailCardProps {
 export default function TrailCard({ trail }: TrailCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -16,6 +17,7 @@ export default function TrailCard({ trail }: TrailCardProps) {
       y: touch.clientY,
       time: Date.now()
     });
+    setIsScrolling(false);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -33,6 +35,31 @@ export default function TrailCard({ trail }: TrailCardProps) {
     }
 
     setTouchStart(null);
+    setIsScrolling(false);
+  };
+
+  const handleScrollTouchStart = (e: React.TouchEvent) => {
+    // Let this event through, but mark that we're potentially scrolling
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    });
+  };
+
+  const handleScrollTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+
+    // If moving more vertically than horizontally, it's a scroll
+    if (deltaY > deltaX && deltaY > 5) {
+      setIsScrolling(true);
+      e.stopPropagation(); // Prevent swipe
+    }
   };
 
   return (
@@ -199,10 +226,11 @@ export default function TrailCard({ trail }: TrailCardProps) {
               className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
               style={{ 
                 scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
+                scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
+                touchAction: 'pan-y' // Only allow vertical scrolling
               }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
+              onTouchStart={handleScrollTouchStart}
+              onTouchMove={handleScrollTouchMove}
               onTouchEnd={(e) => e.stopPropagation()}
             >
               <div className="pb-4">
