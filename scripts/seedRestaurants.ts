@@ -232,8 +232,8 @@ async function seedRestaurants() {
   
   try {
     for (const restaurant of restaurantData) {
-      const restaurantId = restaurant.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      await setDoc(doc(collection(db, 'restaurants'), restaurantId), {
+      const restaurantId = restaurant.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      await setDoc(doc(db, 'restaurants', restaurantId), {
         ...restaurant,
         id: restaurantId
       });

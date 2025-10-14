@@ -253,8 +253,8 @@ async function seedMovies() {
   
   try {
     for (const movie of movieData) {
-      const movieId = movie.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      await setDoc(doc(collection(db, 'movies'), movieId), {
+      const movieId = movie.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      await setDoc(doc(db, 'movies', movieId), {
         ...movie,
         id: movieId
       });

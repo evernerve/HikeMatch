@@ -259,8 +259,8 @@ async function seedTVShows() {
   
   try {
     for (const show of tvData) {
-      const showId = show.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      await setDoc(doc(collection(db, 'tvShows'), showId), {
+      const showId = show.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      await setDoc(doc(db, 'tvShows', showId), {
         ...show,
         id: showId
       });
