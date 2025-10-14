@@ -140,30 +140,30 @@ export default function MySwipes() {
   const passedSwipes = swipes.filter(s => !s.liked);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-8 px-4">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
             📊 My Swipes
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
             View all trails you've swiped on
           </p>
           
           {/* Stats */}
-          <div className="flex justify-center gap-4 mb-4">
-            <div className="bg-white rounded-lg shadow px-6 py-3">
-              <div className="text-2xl font-bold text-green-600">{likedSwipes.length}</div>
-              <div className="text-sm text-gray-600">Liked 💚</div>
+          <div className="flex justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+            <div className="bg-white rounded-lg shadow px-3 sm:px-6 py-2 sm:py-3">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{likedSwipes.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Liked 💚</div>
             </div>
-            <div className="bg-white rounded-lg shadow px-6 py-3">
-              <div className="text-2xl font-bold text-gray-600">{passedSwipes.length}</div>
-              <div className="text-sm text-gray-600">Passed ⏭️</div>
+            <div className="bg-white rounded-lg shadow px-3 sm:px-6 py-2 sm:py-3">
+              <div className="text-xl sm:text-2xl font-bold text-gray-600">{passedSwipes.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Passed ⏭️</div>
             </div>
-            <div className="bg-white rounded-lg shadow px-6 py-3">
-              <div className="text-2xl font-bold text-primary">{swipes.length}</div>
-              <div className="text-sm text-gray-600">Total</div>
+            <div className="bg-white rounded-lg shadow px-3 sm:px-6 py-2 sm:py-3">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{swipes.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Total</div>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export default function MySwipes() {
             <button
               onClick={() => setShowResetModal(true)}
               disabled={resetting}
-              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               {resetting ? 'Resetting...' : '🔄 Reset All Swipes'}
             </button>
@@ -180,15 +180,15 @@ export default function MySwipes() {
         </div>
 
         {swipes.length === 0 ? (
-          <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">👋</span>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <div className="text-center py-8 sm:py-12">
+            <span className="text-5xl sm:text-6xl mb-3 sm:mb-4 block">👋</span>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               No swipes yet
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Start swiping on trails to see them here!
             </p>
-            <a href="/" className="btn-primary inline-block">
+            <a href="/" className="btn-primary inline-block text-sm sm:text-base">
               ← Start Swiping
             </a>
           </div>
@@ -196,9 +196,9 @@ export default function MySwipes() {
           <>
             {/* Liked Trails */}
             {likedSwipes.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">💚 Trails You Liked</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">💚 Trails You Liked</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {likedSwipes.map((swipe) => (
                     <div key={swipe.trailId} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition relative">
                       {swipe.trail && (
@@ -206,21 +206,22 @@ export default function MySwipes() {
                           <img
                             src={swipe.trail.image}
                             alt={swipe.trail.name}
-                            className="w-full h-32 object-cover"
+                            className="w-full h-28 sm:h-32 object-cover"
+                            loading="lazy"
                           />
-                          <div className="p-4">
-                            <h3 className="font-bold text-lg mb-1">{swipe.trail.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          <div className="p-3 sm:p-4">
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.trail.name}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
                               {swipe.trail.description}
                             </p>
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-500">
                                 <span>📏 {swipe.trail.lengthKm} km</span>
                                 <span>⏱️ {swipe.trail.durationHours} hrs</span>
                               </div>
                               <button
                                 onClick={() => setDeleteTrailId(swipe.trailId)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition"
+                                className="text-red-500 hover:text-red-700 active:text-red-800 hover:bg-red-50 p-1.5 sm:p-2 rounded transition text-base sm:text-lg"
                                 title="Delete this swipe"
                               >
                                 🗑️
@@ -238,8 +239,8 @@ export default function MySwipes() {
             {/* Passed Trails */}
             {passedSwipes.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">⏭️ Trails You Passed</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">⏭️ Trails You Passed</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {passedSwipes.map((swipe) => (
                     <div key={swipe.trailId} className="bg-white rounded-lg shadow-md overflow-hidden opacity-75 hover:opacity-100 transition relative">
                       {swipe.trail && (
@@ -247,21 +248,22 @@ export default function MySwipes() {
                           <img
                             src={swipe.trail.image}
                             alt={swipe.trail.name}
-                            className="w-full h-32 object-cover grayscale"
+                            className="w-full h-28 sm:h-32 object-cover grayscale"
+                            loading="lazy"
                           />
-                          <div className="p-4">
-                            <h3 className="font-bold text-lg mb-1">{swipe.trail.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          <div className="p-3 sm:p-4">
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{swipe.trail.name}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
                               {swipe.trail.description}
                             </p>
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-500">
                                 <span>📏 {swipe.trail.lengthKm} km</span>
                                 <span>⏱️ {swipe.trail.durationHours} hrs</span>
                               </div>
                               <button
                                 onClick={() => setDeleteTrailId(swipe.trailId)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition"
+                                className="text-red-500 hover:text-red-700 active:text-red-800 hover:bg-red-50 p-1.5 sm:p-2 rounded transition text-base sm:text-lg"
                                 title="Delete this swipe"
                               >
                                 🗑️

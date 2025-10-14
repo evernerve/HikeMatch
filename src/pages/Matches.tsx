@@ -58,18 +58,18 @@ export default function Matches() {
     return (
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <span className="text-6xl mb-4 block">🔍</span>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <span className="text-5xl sm:text-6xl mb-3 sm:mb-4 block">🔍</span>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
             No matches yet
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             {connectedUserIds.size === 0 
               ? "Connect with friends first, then start swiping on trails together!"
               : "Keep swiping on trails! When you and your friends both like the same trail, it'll appear here."
             }
           </p>
           {connectedUserIds.size === 0 && (
-            <a href="/connections" className="btn-primary inline-block mb-4">
+            <a href="/connections" className="btn-primary inline-block mb-4 text-sm sm:text-base">
               👥 Go to Connections
             </a>
           )}
@@ -79,30 +79,30 @@ export default function Matches() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-8 px-4">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
             🎉 Your Matches
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Trails you and your friends both loved
           </p>
         </div>
 
         {/* Match Count */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6 text-center">
-          <p className="text-lg">
-            <span className="font-bold text-primary text-2xl">{matches.length}</span>
-            <span className="text-gray-600 ml-2">
+        <div className="bg-white rounded-xl shadow-md p-3 sm:p-4 mb-4 sm:mb-6 text-center">
+          <p className="text-base sm:text-lg">
+            <span className="font-bold text-primary text-xl sm:text-2xl">{matches.length}</span>
+            <span className="text-gray-600 ml-2 text-sm sm:text-base">
               {matches.length === 1 ? 'match' : 'matches'} found
             </span>
           </p>
         </div>
 
         {/* Matches Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {matches.map((match, index) => {
             // Get all usernames who liked this trail (excluding current user)
             const otherUsers = match.userProfiles?.filter(p => p.uid !== auth.currentUser?.uid) || [];
@@ -115,45 +115,46 @@ export default function Matches() {
               >
                 {/* Trail Image */}
                 {match.trail && (
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-40 sm:h-48 overflow-hidden">
                     <img
                       src={match.trail.image}
                       alt={match.trail.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     
                     {/* Match Badge */}
-                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg animate-pulse">
+                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold shadow-lg animate-pulse">
                       ✓ Match!
                     </div>
                   </div>
                 )}
 
                 {/* Match Info */}
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                <div className="p-3 sm:p-5">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
                     {match.trail?.name || 'Trail'}
                   </h3>
                   
                   {/* Who Liked */}
-                  <div className="mb-3 p-3 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-700 mb-1">
+                  <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-green-50 rounded-lg">
+                    <p className="text-xs sm:text-sm text-gray-700 mb-1">
                       <span className="font-semibold">💚 Liked by:</span>
                     </p>
-                    <p className="text-sm text-primary font-medium">
+                    <p className="text-xs sm:text-sm text-primary font-medium break-words">
                       {usernames || 'Friends'}
                     </p>
                   </div>
 
                   {match.trail && (
                     <>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
                         {match.trail.description}
                       </p>
 
                       {/* Trail Details */}
-                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
                         <span className="flex items-center">
                           📏 {match.trail.lengthKm} km
                         </span>
@@ -163,11 +164,11 @@ export default function Matches() {
                       </div>
 
                       {/* Tags */}
-                      <div className="flex flex-wrap gap-2">
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        <span className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                           {match.trail.pathType}
                         </span>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                        <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                           {match.trail.scenery}
                         </span>
                       </div>
@@ -175,7 +176,7 @@ export default function Matches() {
                   )}
 
                   {/* Matched Date */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
                     <p className="text-xs text-gray-400">
                       Matched {new Date(match.matchedAt.toDate()).toLocaleDateString()}
                     </p>
@@ -187,13 +188,13 @@ export default function Matches() {
         </div>
 
         {/* Call to Action */}
-        <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4">
+        <div className="mt-6 sm:mt-8 text-center">
+          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
             Want more matches? Keep swiping on trails!
           </p>
           <a
             href="/"
-            className="inline-block btn-primary"
+            className="inline-block btn-primary text-sm sm:text-base"
           >
             ← Back to Trails
           </a>

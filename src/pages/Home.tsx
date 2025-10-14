@@ -97,20 +97,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-8 px-4">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
             Discover Trails
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Swipe right to like • Swipe left to pass
           </p>
         </div>
 
         {/* Cards Container */}
-        <div className="relative h-[600px] mb-6">
+        <div className="relative h-[500px] sm:h-[600px] mb-4 sm:mb-6">
           {trails.map((trail, index) => {
             // Only render cards that are close to being shown (current card and next 2)
             const shouldRender = index >= currentIndex - 2 && index <= currentIndex;
@@ -144,11 +144,11 @@ export default function Home() {
         </div>
 
         {/* Swipe Buttons */}
-        <div className="flex justify-center items-center space-x-8">
+        <div className="flex justify-center items-center space-x-6 sm:space-x-8">
           <button
             onClick={() => swipe('left')}
             disabled={!canSwipe}
-            className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-3xl hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             title="Pass"
           >
             ❌
@@ -156,7 +156,7 @@ export default function Home() {
           <button
             onClick={() => swipe('right')}
             disabled={!canSwipe}
-            className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-3xl hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl sm:text-3xl hover:scale-110 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             title="Like"
           >
             💚
@@ -165,16 +165,16 @@ export default function Home() {
 
         {/* Last Action Indicator */}
         {lastDirection && (
-          <div className="text-center mt-6">
-            <p className="text-gray-600 font-medium">
+          <div className="text-center mt-4 sm:mt-6">
+            <p className="text-sm sm:text-base text-gray-600 font-medium">
               You {lastDirection === 'right' ? 'liked ❤️' : 'passed ➡️'} this trail
             </p>
           </div>
         )}
 
         {/* Trail Counter */}
-        <div className="text-center mt-6">
-          <p className="text-gray-500 text-sm">
+        <div className="text-center mt-4 sm:mt-6">
+          <p className="text-gray-500 text-xs sm:text-sm">
             {canSwipe ? currentIndex + 1 : 0} / {trails.length} trails remaining
           </p>
         </div>

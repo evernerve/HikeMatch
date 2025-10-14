@@ -105,34 +105,34 @@ export default function Connections() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-8 px-4">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-primary-50 via-forest-50 to-primary-100 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
             👥 Connections
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Connect with friends to see your trail matches
           </p>
         </div>
 
         {/* Send Invite */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">🔗 Send Connection Request</h2>
-          <form onSubmit={handleSendRequest} className="flex gap-3">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🔗 Send Connection Request</h2>
+          <form onSubmit={handleSendRequest} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="input-field flex-1"
+              className="input-field flex-1 text-sm sm:text-base"
               placeholder="Enter username..."
               disabled={sending}
             />
             <button
               type="submit"
               disabled={sending || !username.trim()}
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
             >
               {sending ? 'Sending...' : 'Send Request'}
             </button>
@@ -141,32 +141,32 @@ export default function Connections() {
 
         {/* Received Requests */}
         {receivedRequests.length > 0 && (
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
               📨 Received Requests ({receivedRequests.length})
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {receivedRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="flex items-center justify-between p-4 bg-blue-50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-blue-50 rounded-lg gap-3"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-gray-800 text-sm sm:text-base">
                       {request.fromDisplayName}
                     </p>
-                    <p className="text-sm text-gray-600">@{request.fromUsername}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">@{request.fromUsername}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 sm:gap-2">
                     <button
                       onClick={() => setActionRequest({ id: request.id, action: 'accept' })}
-                      className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+                      className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex-1 sm:flex-none"
                     >
                       ✓ Accept
                     </button>
                     <button
                       onClick={() => setActionRequest({ id: request.id, action: 'reject' })}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition"
+                      className="bg-gray-300 hover:bg-gray-400 active:bg-gray-500 text-gray-800 font-semibold py-2 px-3 sm:px-4 rounded-lg transition text-sm flex-1 sm:flex-none"
                     >
                       ✗ Reject
                     </button>
@@ -179,23 +179,23 @@ export default function Connections() {
 
         {/* Sent Requests */}
         {sentRequests.length > 0 && (
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
               📤 Sent Requests ({sentRequests.length})
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {sentRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg"
+                  className="flex items-center justify-between p-3 sm:p-4 bg-yellow-50 rounded-lg"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-gray-800 text-sm sm:text-base">
                       {request.toUsername}
                     </p>
-                    <p className="text-sm text-gray-600">Pending...</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Pending...</p>
                   </div>
-                  <span className="text-gray-400">⏳</span>
+                  <span className="text-gray-400 text-xl sm:text-2xl">⏳</span>
                 </div>
               ))}
             </div>
@@ -203,33 +203,33 @@ export default function Connections() {
         )}
 
         {/* Connected Friends */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
             ✅ Connected ({connections.length})
           </h2>
           {connections.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-6xl mb-4 block">🤝</span>
-              <p className="text-gray-600">No connections yet</p>
-              <p className="text-sm text-gray-500 mt-2">
+            <div className="text-center py-6 sm:py-8">
+              <span className="text-5xl sm:text-6xl mb-3 sm:mb-4 block">🤝</span>
+              <p className="text-sm sm:text-base text-gray-600">No connections yet</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-2">
                 Send a request to start matching trails with friends!
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {connections.map((connection, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-4 bg-green-50 rounded-lg"
+                  className="flex items-center gap-3 p-3 sm:p-4 bg-green-50 rounded-lg"
                 >
-                  <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-base sm:text-lg flex-shrink-0">
                     {connection.connectedDisplayName.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 text-sm sm:text-base truncate">
                       {connection.connectedDisplayName}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
                       @{connection.connectedUsername}
                     </p>
                   </div>
