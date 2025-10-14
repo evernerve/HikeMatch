@@ -1,6 +1,6 @@
 # HikeMatch 🥾
 
-A Tinder-style Progressive Web App (PWA) where friends can swipe on hiking trails and find mutual matches!
+A fun swiping Progressive Web App (PWA) where friends can swipe on hiking trails and find mutual matches!
 
 ## 🎯 Features
 
