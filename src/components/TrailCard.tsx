@@ -158,6 +158,10 @@ export default function TrailCard({ trail }: TrailCardProps) {
           <div 
             className="absolute top-0 left-0 right-0 h-48 z-10 cursor-pointer"
             onClick={() => setIsFlipped(false)}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              setIsFlipped(false);
+            }}
           >
             <img
               src={trail.image}
@@ -176,6 +180,10 @@ export default function TrailCard({ trail }: TrailCardProps) {
           {/* Back button - positioned over image */}
           <button 
             onClick={(e) => {
+              e.stopPropagation();
+              setIsFlipped(false);
+            }}
+            onTouchEnd={(e) => {
               e.stopPropagation();
               setIsFlipped(false);
             }}
