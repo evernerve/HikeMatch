@@ -70,10 +70,13 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading trails...</p>
+      <div className="min-h-[calc(100vh-64px)]">
+        <CategorySelector />
+        <div className="min-h-[calc(100vh-128px)] bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading items...</p>
+          </div>
         </div>
       </div>
     );
@@ -81,32 +84,35 @@ export default function Home() {
 
   if (!canSwipe && items.length === 0) {
     return (
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <span className="text-6xl mb-4 block">🎉</span>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            You've seen everything in this category!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Check your matches or switch to another category!
-          </p>
-          <button
-            onClick={loadItems}
-            className="btn-primary"
-          >
-            🔄 Reload Items
-          </button>
+      <div className="min-h-[calc(100vh-64px)]">
+        <CategorySelector />
+        <div className="min-h-[calc(100vh-128px)] bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <span className="text-6xl mb-4 block">🎉</span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              You've seen everything in this category!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Check your matches or switch to another category!
+            </p>
+            <button
+              onClick={loadItems}
+              className="btn-primary"
+            >
+              🔄 Reload Items
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Category Selector */}
+    <div className="min-h-[calc(100vh-64px)]">
+      {/* Category Selector - Always visible */}
       <CategorySelector />
       
-      <div className="py-4 sm:py-6 px-2 sm:px-4">
+      <div className="min-h-[calc(100vh-128px)] bg-gradient-to-br from-green-50 to-blue-50 py-4 sm:py-6 px-2 sm:px-4">
         <div className="max-w-md mx-auto">
         {/* Cards Container */}
         <div className="relative h-[500px] sm:h-[600px] mb-4">

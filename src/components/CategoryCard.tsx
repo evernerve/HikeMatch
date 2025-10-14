@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { SwipeItem, isHikeData } from '../types/categories';
+import { SwipeItem, isHikeData, isMovieData, isTVData, isRestaurantData } from '../types/categories';
 
 interface CategoryCardProps {
   item: SwipeItem;
@@ -13,6 +13,9 @@ export default function CategoryCard({ item }: CategoryCardProps) {
 
   // Type-safe access to category-specific data
   const hikeData = isHikeData(item.categoryData) ? item.categoryData : null;
+  const movieData = isMovieData(item.categoryData) ? item.categoryData : null;
+  const tvData = isTVData(item.categoryData) ? item.categoryData : null;
+  const restaurantData = isRestaurantData(item.categoryData) ? item.categoryData : null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -80,57 +83,137 @@ export default function CategoryCard({ item }: CategoryCardProps) {
               {item.description}
             </p>
 
-            {/* Trail Stats - Icon Only Grid */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {/* Distance */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">🚶‍♂️</span>
-                <span className="text-xs font-medium text-gray-800">{hikeData?.lengthKm} km</span>
-              </div>
-              
-              {/* Duration */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">⏱️</span>
-                <span className="text-xs font-medium text-gray-800">{hikeData?.durationHours} hrs</span>
-              </div>
-              
-              {/* Elevation */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">⛰️</span>
-                <span className="text-xs font-medium text-gray-800">{hikeData?.elevationGainM} m</span>
-              </div>
-              
-              {/* Difficulty */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">{hikeData?.difficulty === 'easy' ? '🟢' : hikeData?.difficulty === 'moderate' ? '🟡' : '🔴'}</span>
-                <span className="text-xs font-medium text-gray-800 capitalize">{hikeData?.difficulty}</span>
-              </div>
-            </div>
+            {/* Category-Specific Stats */}
+            {hikeData && (
+              <>
+                {/* Hike Stats */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">🚶‍♂️</span>
+                    <span className="text-xs font-medium text-gray-800">{hikeData.lengthKm} km</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⏱️</span>
+                    <span className="text-xs font-medium text-gray-800">{hikeData.durationHours} hrs</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⛰️</span>
+                    <span className="text-xs font-medium text-gray-800">{hikeData.elevationGainM} m</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">{hikeData.difficulty === 'easy' ? '🟢' : hikeData.difficulty === 'moderate' ? '🟡' : '🔴'}</span>
+                    <span className="text-xs font-medium text-gray-800 capitalize">{hikeData.difficulty}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">📍</span>
+                    <span className="text-xs font-medium text-gray-800">{hikeData.location}</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">🚂</span>
+                    <span className="text-xs font-medium text-gray-800">{hikeData.publicTransportTime} min</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 bg-green-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
+                    {hikeData.pathType}
+                  </span>
+                  <span className="px-2.5 py-1 bg-blue-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
+                    {hikeData.scenery}
+                  </span>
+                </div>
+              </>
+            )}
 
-            {/* Location & Transport - Icon Only */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {/* Location */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">📍</span>
-                <span className="text-xs font-medium text-gray-800">{hikeData?.location}</span>
-              </div>
-              
-              {/* Transport Time */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                <span className="text-base">🚂</span>
-                <span className="text-xs font-medium text-gray-800">{hikeData?.publicTransportTime} min</span>
-              </div>
-            </div>
+            {movieData && (
+              <>
+                {/* Movie Stats */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">📅</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.year}</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⏱️</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.runtime} min</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⭐</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.rating.toFixed(1)}/10</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">🎬</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.director}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {movieData.genres.slice(0, 3).map((genre) => (
+                    <span key={genre} className="px-2.5 py-1 bg-red-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
 
-            {/* Trail Type Tags */}
-            <div className="flex flex-wrap gap-2">
-              <span className="px-2.5 py-1 bg-green-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
-                {hikeData?.pathType}
-              </span>
-              <span className="px-2.5 py-1 bg-blue-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
-                {hikeData?.scenery}
-              </span>
-            </div>
+            {tvData && (
+              <>
+                {/* TV Show Stats */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">📅</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.startYear}{tvData.endYear ? `-${tvData.endYear}` : '+'}</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">�</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.seasons} seasons</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⭐</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.rating.toFixed(1)}/10</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">🎭</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.network}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tvData.genres.slice(0, 3).map((genre) => (
+                    <span key={genre} className="px-2.5 py-1 bg-purple-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {restaurantData && (
+              <>
+                {/* Restaurant Stats */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">💰</span>
+                    <span className="text-xs font-medium text-gray-800">{restaurantData.priceRange}</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">⭐</span>
+                    <span className="text-xs font-medium text-gray-800">{restaurantData.rating.toFixed(1)}/5</span>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                    <span className="text-base">📍</span>
+                    <span className="text-xs font-medium text-gray-800">{restaurantData.location}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {restaurantData.cuisine.slice(0, 3).map((cuisine) => (
+                    <span key={cuisine} className="px-2.5 py-1 bg-orange-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
+                      {cuisine}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Click to flip hint */}
@@ -290,67 +373,263 @@ export default function CategoryCard({ item }: CategoryCardProps) {
             >
               <div className="pb-4">
               
-              {/* Special Feature */}
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">✨</span>
-                  <h3 className="text-lg font-semibold">What Makes It Special</h3>
-                </div>
-                <p className="text-sm text-white/90 leading-relaxed">
-                  {hikeData?.specialFeature || "A unique hiking experience in the Munich area."}
-                </p>
-              </div>
-
-              {/* Detailed Description */}
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">📖</span>
-                  <h3 className="text-lg font-semibold">About This Trail</h3>
-                </div>
-                <p className="text-sm text-white/90 leading-relaxed">
-                  {hikeData?.detailedDescription || item.description}
-                </p>
-              </div>
-
-              {/* Highlights */}
-              {hikeData?.highlights && hikeData?.highlights.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">🎯</span>
-                    <h3 className="text-lg font-semibold">Trail Highlights</h3>
+              {/* Hike-specific back content */}
+              {hikeData && (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">✨</span>
+                      <h3 className="text-lg font-semibold">What Makes It Special</h3>
+                    </div>
+                    <p className="text-sm text-white/90 leading-relaxed">
+                      {hikeData.specialFeature || "A unique hiking experience in the Munich area."}
+                    </p>
                   </div>
-                  <ul className="space-y-2">
-                    {hikeData?.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-white/90">
-                        <span className="text-primary-200 mt-0.5">•</span>
-                        <span>{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">📖</span>
+                      <h3 className="text-lg font-semibold">About This Trail</h3>
+                    </div>
+                    <p className="text-sm text-white/90 leading-relaxed">
+                      {hikeData.detailedDescription || item.description}
+                    </p>
+                  </div>
+
+                  {hikeData.highlights && hikeData.highlights.length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">🎯</span>
+                        <h3 className="text-lg font-semibold">Trail Highlights</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {hikeData.highlights.map((highlight, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm text-white/90">
+                            <span className="text-primary-200 mt-0.5">•</span>
+                            <span>{highlight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Distance from Munich</p>
+                        <p className="text-sm font-semibold">{hikeData.distanceFromMunichKm} km</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">By Public Transport</p>
+                        <p className="text-sm font-semibold">{hikeData.publicTransportTime} min</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Trail Type</p>
+                        <p className="text-sm font-semibold">{hikeData.pathType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Scenery</p>
+                        <p className="text-sm font-semibold">{hikeData.scenery}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
 
-              {/* Quick Stats Summary */}
-              <div className="mt-6 pt-6 border-t border-white/20">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-white/60 mb-1">Distance from Munich</p>
-                    <p className="text-sm font-semibold">{hikeData?.distanceFromMunichKm} km</p>
+              {/* Movie-specific back content */}
+              {movieData && (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🎬</span>
+                      <h3 className="text-lg font-semibold">Plot</h3>
+                    </div>
+                    <p className="text-sm text-white/90 leading-relaxed">
+                      {movieData.plot}
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-white/60 mb-1">By Public Transport</p>
-                    <p className="text-sm font-semibold">{hikeData?.publicTransportTime} min</p>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🎭</span>
+                      <h3 className="text-lg font-semibold">Cast</h3>
+                    </div>
+                    <p className="text-sm text-white/90">
+                      {movieData.cast.slice(0, 5).join(', ')}
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-white/60 mb-1">Trail Type</p>
-                    <p className="text-sm font-semibold">{hikeData?.pathType}</p>
+
+                  {movieData.streamingPlatforms && movieData.streamingPlatforms.length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">📺</span>
+                        <h3 className="text-lg font-semibold">Available On</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {movieData.streamingPlatforms.map((platform) => (
+                          <span key={platform} className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
+                            {platform}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Director</p>
+                        <p className="text-sm font-semibold">{movieData.director}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Year</p>
+                        <p className="text-sm font-semibold">{movieData.year}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Runtime</p>
+                        <p className="text-sm font-semibold">{movieData.runtime} min</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Rating</p>
+                        <p className="text-sm font-semibold">⭐ {movieData.rating}/10</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-white/60 mb-1">Scenery</p>
-                    <p className="text-sm font-semibold">{hikeData?.scenery}</p>
+                </>
+              )}
+
+              {/* TV Show-specific back content */}
+              {tvData && (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">📺</span>
+                      <h3 className="text-lg font-semibold">Plot</h3>
+                    </div>
+                    <p className="text-sm text-white/90 leading-relaxed">
+                      {tvData.plot}
+                    </p>
                   </div>
-                </div>
-              </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🎭</span>
+                      <h3 className="text-lg font-semibold">Cast</h3>
+                    </div>
+                    <p className="text-sm text-white/90">
+                      {tvData.cast.slice(0, 5).join(', ')}
+                    </p>
+                  </div>
+
+                  {tvData.streamingPlatforms && tvData.streamingPlatforms.length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">📺</span>
+                        <h3 className="text-lg font-semibold">Available On</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {tvData.streamingPlatforms.map((platform) => (
+                          <span key={platform} className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
+                            {platform}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Creator</p>
+                        <p className="text-sm font-semibold">{tvData.creator}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Network</p>
+                        <p className="text-sm font-semibold">{tvData.network}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Seasons</p>
+                        <p className="text-sm font-semibold">{tvData.seasons} ({tvData.episodes} episodes)</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Rating</p>
+                        <p className="text-sm font-semibold">⭐ {tvData.rating}/10</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Restaurant-specific back content */}
+              {restaurantData && (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🍽️</span>
+                      <h3 className="text-lg font-semibold">Specialties</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {restaurantData.specialties.map((specialty, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-white/90">
+                          <span className="text-primary-200 mt-0.5">•</span>
+                          <span>{specialty}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🥗</span>
+                      <h3 className="text-lg font-semibold">Dietary Options</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {restaurantData.dietaryOptions.map((option) => (
+                        <span key={option} className="px-3 py-1 bg-green-500/30 rounded-full text-xs font-medium">
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">✨</span>
+                      <h3 className="text-lg font-semibold">Ambiance</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {restaurantData.ambiance.map((vibe) => (
+                        <span key={vibe} className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
+                          {vibe}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Location</p>
+                        <p className="text-sm font-semibold">{restaurantData.location}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Price Range</p>
+                        <p className="text-sm font-semibold">{restaurantData.priceRange}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Rating</p>
+                        <p className="text-sm font-semibold">⭐ {restaurantData.rating}/5</p>
+                      </div>
+                      {restaurantData.phone && (
+                        <div>
+                          <p className="text-xs text-white/60 mb-1">Phone</p>
+                          <p className="text-sm font-semibold">{restaurantData.phone}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

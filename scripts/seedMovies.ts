@@ -1,19 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { SwipeItem } from '../src/types/categories';
-
-// Firebase config (same as main app)
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from './firebaseConfig';
 
 const movieData: Omit<SwipeItem, 'id'>[] = [
   {
@@ -254,9 +241,12 @@ async function seedMovies() {
   try {
     for (const movie of movieData) {
       const movieId = movie.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const now = Timestamp.now();
       await setDoc(doc(db, 'movies', movieId), {
         ...movie,
-        id: movieId
+        id: movieId,
+        createdAt: now,
+        updatedAt: now
       });
       console.log(`✅ Added: ${movie.name}`);
     }
@@ -264,6 +254,7 @@ async function seedMovies() {
     console.log(`\n🎉 Successfully seeded ${movieData.length} movies!`);
   } catch (error) {
     console.error('❌ Error seeding movies:', error);
+    throw error;
   }
 }
 

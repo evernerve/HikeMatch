@@ -1,19 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { SwipeItem } from '../src/types/categories';
-
-// Firebase config (same as main app)
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from './firebaseConfig';
 
 const tvData: Omit<SwipeItem, 'id'>[] = [
   {
@@ -260,9 +247,12 @@ async function seedTVShows() {
   try {
     for (const show of tvData) {
       const showId = show.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const now = Timestamp.now();
       await setDoc(doc(db, 'tvShows', showId), {
         ...show,
-        id: showId
+        id: showId,
+        createdAt: now,
+        updatedAt: now
       });
       console.log(`✅ Added: ${show.name}`);
     }
@@ -270,6 +260,7 @@ async function seedTVShows() {
     console.log(`\n🎉 Successfully seeded ${tvData.length} TV shows!`);
   } catch (error) {
     console.error('❌ Error seeding TV shows:', error);
+    throw error;
   }
 }
 
