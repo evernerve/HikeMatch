@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Trail } from '../lib/firestoreHelpers';
 
 interface TrailCardProps {
@@ -8,6 +8,24 @@ interface TrailCardProps {
 export default function TrailCard({ trail }: TrailCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Prevent parent from handling touch events on scroll area
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Allow scrolling, prevent swiping
+      e.stopPropagation();
+    };
+
+    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    
+    return () => {
+      scrollElement.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [isFlipped]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -36,26 +54,13 @@ export default function TrailCard({ trail }: TrailCardProps) {
   };
 
   const handleScrollTouchStart = (e: React.TouchEvent) => {
-    // Let this event through, but mark that we're potentially scrolling
+    // Mark touch start for tap detection
     const touch = e.touches[0];
     setTouchStart({
       x: touch.clientX,
       y: touch.clientY,
       time: Date.now()
     });
-  };
-
-  const handleScrollTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart) return;
-    
-    const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - touchStart.x);
-    const deltaY = Math.abs(touch.clientY - touchStart.y);
-
-    // If moving more vertically than horizontally, it's a scroll
-    if (deltaY > deltaX && deltaY > 5) {
-      e.stopPropagation(); // Prevent swipe
-    }
   };
 
   return (
@@ -217,17 +222,21 @@ export default function TrailCard({ trail }: TrailCardProps) {
           </button>
 
           {/* Content Area */}
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full pointer-events-none">
             <div 
-              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
+              ref={scrollRef}
+              className="w-full h-full pt-52 px-6 pb-6 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent pointer-events-auto"
               style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
-                touchAction: 'pan-y' // Only allow vertical scrolling
+                touchAction: 'pan-y', // Only allow vertical scrolling
+                WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
               }}
               onTouchStart={handleScrollTouchStart}
-              onTouchMove={handleScrollTouchMove}
-              onTouchEnd={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                setTouchStart(null);
+              }}
             >
               <div className="pb-4">
               
