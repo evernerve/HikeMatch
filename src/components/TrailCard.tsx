@@ -8,7 +8,6 @@ interface TrailCardProps {
 export default function TrailCard({ trail }: TrailCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -17,7 +16,6 @@ export default function TrailCard({ trail }: TrailCardProps) {
       y: touch.clientY,
       time: Date.now()
     });
-    setIsScrolling(false);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -35,7 +33,6 @@ export default function TrailCard({ trail }: TrailCardProps) {
     }
 
     setTouchStart(null);
-    setIsScrolling(false);
   };
 
   const handleScrollTouchStart = (e: React.TouchEvent) => {
@@ -57,7 +54,6 @@ export default function TrailCard({ trail }: TrailCardProps) {
 
     // If moving more vertically than horizontally, it's a scroll
     if (deltaY > deltaX && deltaY > 5) {
-      setIsScrolling(true);
       e.stopPropagation(); // Prevent swipe
     }
   };
