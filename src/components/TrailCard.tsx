@@ -15,14 +15,30 @@ export default function TrailCard({ trail }: TrailCardProps) {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
-    const handleTouchMove = (e: TouchEvent) => {
-      // Allow scrolling, prevent swiping
-      e.stopPropagation();
+    let startY = 0;
+    let startX = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      const deltaY = Math.abs(e.touches[0].clientY - startY);
+      const deltaX = Math.abs(e.touches[0].clientX - startX);
+      
+      // If moving more vertically than horizontally, it's a scroll - allow it and block swipe
+      if (deltaY > deltaX) {
+        e.stopPropagation(); // Stop swipe from triggering
+        // Don't preventDefault - allow native scroll
+      }
+    };
+
+    scrollElement.addEventListener('touchstart', handleTouchStart, { passive: true });
     scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
     
     return () => {
+      scrollElement.removeEventListener('touchstart', handleTouchStart);
       scrollElement.removeEventListener('touchmove', handleTouchMove);
     };
   }, [isFlipped]);
