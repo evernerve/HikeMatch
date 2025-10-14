@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import TinderCard from 'react-tinder-card';
 import { Trail, getUnswipedTrails, recordSwipe } from '../lib/firestoreHelpers';
 import { auth } from '../lib/firebase';
 import TrailCard from '../components/TrailCard';
+import CategorySelector from '../components/CategorySelector';
 
 export default function Home() {
   const [trails, setTrails] = useState<Trail[]>([]);
@@ -97,8 +98,12 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50 py-4 sm:py-6 px-2 sm:px-4">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 to-blue-50">
+      {/* Category Selector */}
+      <CategorySelector />
+      
+      <div className="py-4 sm:py-6 px-2 sm:px-4">
+        <div className="max-w-md mx-auto">
         {/* Cards Container */}
         <div className="relative h-[500px] sm:h-[600px] mb-4">
           {trails.map((trail, index) => {
@@ -171,10 +176,8 @@ export default function Home() {
             {canSwipe ? currentIndex + 1 : 0} / {trails.length} trails remaining
           </p>
         </div>
+        </div>
       </div>
     </div>
   );
 }
-
-// Add React import for createRef
-import React from 'react';

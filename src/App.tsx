@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
+import { CategoryProvider } from './context/CategoryContext';
 import AuthForm from './components/AuthForm';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -28,7 +29,7 @@ function App() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
-          <p className="text-white font-medium text-lg">Loading HikeMatch...</p>
+          <p className="text-white font-medium text-lg">Loading SwipeMatch...</p>
         </div>
       </div>
     );
@@ -39,18 +40,20 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/my-swipes" element={<MySwipes />} />
-          <Route path="/connections" element={<Connections />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+    <CategoryProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/my-swipes" element={<MySwipes />} />
+            <Route path="/connections" element={<Connections />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </CategoryProvider>
   );
 }
 
