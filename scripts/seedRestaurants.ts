@@ -6,7 +6,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Hofbräuhaus München',
-    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=500',
+    image: 'https://images.unsplash.com/photo-1598387181032-a3103a2db5b1?w=800&q=80',
     description: 'The world\'s most famous beer hall, serving traditional Bavarian cuisine since 1589.',
     categoryData: {
       restaurantName: 'Hofbräuhaus München',
@@ -27,7 +27,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Tantris',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500',
+    image: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=800&q=80',
     description: 'Two Michelin-starred restaurant offering innovative French cuisine in a distinctive 1970s setting.',
     categoryData: {
       restaurantName: 'Tantris',
@@ -48,7 +48,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Viktualienmarkt Food Stalls',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500',
+    image: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80',
     description: 'Munich\'s famous outdoor market with diverse food stalls and a beer garden at its heart.',
     categoryData: {
       restaurantName: 'Viktualienmarkt Food Stalls',
@@ -68,7 +68,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Pageou',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500',
+    image: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=800&q=80',
     description: 'Modern French-Mediterranean cuisine in an elegant setting near the Hofgarten.',
     categoryData: {
       restaurantName: 'Pageou',
@@ -89,7 +89,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Gratitude',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500',
+    image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80',
     description: 'Plant-based restaurant with creative vegan dishes in a stylish, Instagram-worthy space.',
     categoryData: {
       restaurantName: 'Gratitude',
@@ -110,7 +110,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Schneider Bräuhaus',
-    image: 'https://images.unsplash.com/photo-1558985212-92c2ff0b56e7?w=500',
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&q=80',
     description: 'Traditional Bavarian brewery restaurant famous for its wheat beer and hearty dishes.',
     categoryData: {
       restaurantName: 'Schneider Bräuhaus',
@@ -131,7 +131,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Emiko',
-    image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=500',
+    image: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80',
     description: 'Contemporary Japanese restaurant with sushi bar and robata grill in a chic setting.',
     categoryData: {
       restaurantName: 'Emiko',
@@ -152,7 +152,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Augustiner-Bräu',
-    image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=500',
+    image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
     description: 'Munich\'s oldest independent brewery with a traditional beer hall and garden.',
     categoryData: {
       restaurantName: 'Augustiner-Bräu',
@@ -173,7 +173,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Tian',
-    image: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=500',
+    image: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=800&q=80',
     description: 'Michelin-starred vegetarian fine dining with creative, seasonal tasting menus.',
     categoryData: {
       restaurantName: 'Tian',
@@ -194,7 +194,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Rusticana',
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500',
+    image: 'https://images.unsplash.com/photo-1595295333158-4742f28fbd85?w=800&q=80',
     description: 'Cozy Italian trattoria serving authentic pasta, pizza, and regional Italian wines.',
     categoryData: {
       restaurantName: 'Rusticana',
