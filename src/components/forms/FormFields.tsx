@@ -2,6 +2,8 @@
  * Shared form field components
  */
 
+import { useState } from 'react';
+
 interface FormFieldProps {
   label: string;
   name: string;
@@ -17,6 +19,7 @@ interface FormFieldProps {
   max?: number;
   step?: number;
   helpText?: string;
+  onImageSearch?: () => void;
 }
 
 export function FormField({
@@ -34,15 +37,28 @@ export function FormField({
   max,
   step,
   helpText,
+  onImageSearch,
 }: FormFieldProps) {
   const inputClasses = `input-field text-sm ${
     error ? 'border-red-400 focus:ring-red-500' : warning ? 'border-yellow-400 focus:ring-yellow-500' : ''
   }`;
+  
+  const isImageField = type === 'url' && name === 'image';
 
   return (
     <div className="mb-4">
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
         {label} {required && <span className="text-red-500">*</span>}
+        {isImageField && onImageSearch && (
+          <button
+            type="button"
+            onClick={onImageSearch}
+            disabled={disabled}
+            className="ml-2 text-xs px-2 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded transition-colors disabled:opacity-50"
+          >
+            🔍 Search Images
+          </button>
+        )}
       </label>
       
       {type === 'textarea' ? (
@@ -237,6 +253,3 @@ export function MultiInputField({
     </div>
   );
 }
-
-// Add import for useState
-import { useState } from 'react';

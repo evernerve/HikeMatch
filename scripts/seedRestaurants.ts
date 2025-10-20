@@ -6,7 +6,7 @@ const restaurantData: Omit<SwipeItem, 'id'>[] = [
   {
     category: 'restaurants',
     name: 'Hofbräuhaus München',
-    image: 'https://images.unsplash.com/photo-1598387181032-a3103a2db5b1?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80',
     description: 'The world\'s most famous beer hall, serving traditional Bavarian cuisine since 1589.',
     categoryData: {
       restaurantName: 'Hofbräuhaus München',

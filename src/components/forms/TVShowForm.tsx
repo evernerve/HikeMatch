@@ -17,6 +17,7 @@ interface TVShowFormProps {
   onImageChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onCategoryDataChange: (data: Partial<TVData>) => void;
+  onImageSearch?: () => void;
 }
 
 export default function TVShowForm({
@@ -31,6 +32,7 @@ export default function TVShowForm({
   onImageChange,
   onDescriptionChange,
   onCategoryDataChange,
+  onImageSearch,
 }: TVShowFormProps) {
   const updateField = (field: keyof TVData, value: any) => {
     onCategoryDataChange({ ...categoryData, [field]: value });
@@ -61,6 +63,7 @@ export default function TVShowForm({
         helpText="Use TMDb or TVDb poster URL for best quality"
         required
         disabled={loading}
+        onImageSearch={onImageSearch}
       />
 
       <FormField

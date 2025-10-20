@@ -9,9 +9,10 @@
  */
 
 import { useState } from 'react';
-import type { CategoryType, TVData } from '../types/categories';
+import type { CategoryType } from '../types/categories';
 import { generateTVShowPrompt, generateRestaurantPrompt, generateHikePrompt, generateMoviePrompt } from '../lib/aiPromptTemplates';
 import { parseText, type ParseResult } from '../lib/textParser';
+import { ImageSearchModal } from './ImageSearchModal';
 
 interface QuickAddFormProps {
   category: CategoryType;
@@ -29,6 +30,8 @@ export function QuickAddForm({ category, onSubmit, onCancel, loading }: QuickAdd
   const [editedData, setEditedData] = useState<any>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [showRawText, setShowRawText] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
+  const [imageSearchQuery, setImageSearchQuery] = useState('');
 
   // Generate the prompt
   const prompt = category === 'tv' 
@@ -114,15 +117,36 @@ export function QuickAddForm({ category, onSubmit, onCancel, loading }: QuickAdd
     }
   };
 
-  // Render field editor
+  // Render a field editor
   const renderFieldEditor = (field: string, value: any, label: string) => {
     const isEditing = editingField === field;
-    const isEmpty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+    const isEmpty = value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+    const isImageField = field === 'imageUrl';
 
     return (
-      <div key={field} className="flex items-start justify-between py-2 px-3 rounded hover:bg-gray-50 group">
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-700 mb-1">{label}</div>
+      <div key={field} className="group flex items-start justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="text-xs font-medium text-gray-600">{label}</div>
+            {isImageField && (
+              <button
+                onClick={() => {
+                  setImageSearchQuery(
+                    category === 'tv' || category === 'movies' 
+                      ? editedData?.title || ''
+                      : category === 'restaurants'
+                      ? editedData?.restaurantName || ''
+                      : editedData?.name || ''
+                  );
+                  setShowImageSearch(true);
+                }}
+                className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded transition-colors"
+                disabled={loading}
+              >
+                🔍 Search Images
+              </button>
+            )}
+          </div>
           {isEditing ? (
             <div className="space-y-2">
               {Array.isArray(value) ? (
@@ -175,9 +199,7 @@ export function QuickAddForm({ category, onSubmit, onCancel, loading }: QuickAdd
         </button>
       </div>
     );
-  };
-
-  // Prompt view
+  };  // Prompt view
   if (viewMode === 'prompt') {
     return (
       <div className="space-y-4">
@@ -474,6 +496,18 @@ export function QuickAddForm({ category, onSubmit, onCancel, loading }: QuickAdd
           {loading ? 'Creating...' : '✓ Create Card'}
         </button>
       </div>
+
+      {/* Image Search Modal */}
+      <ImageSearchModal
+        isOpen={showImageSearch}
+        onClose={() => setShowImageSearch(false)}
+        onSelectImage={(url) => {
+          updateField('imageUrl', url);
+          setShowImageSearch(false);
+        }}
+        category={category}
+        searchQuery={imageSearchQuery}
+      />
     </div>
   );
 }

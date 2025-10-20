@@ -17,6 +17,7 @@ interface MovieFormProps {
   onImageChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onCategoryDataChange: (data: Partial<MovieData>) => void;
+  onImageSearch?: () => void;
 }
 
 export default function MovieForm({
@@ -31,6 +32,7 @@ export default function MovieForm({
   onImageChange,
   onDescriptionChange,
   onCategoryDataChange,
+  onImageSearch,
 }: MovieFormProps) {
   const updateField = (field: keyof MovieData, value: any) => {
     onCategoryDataChange({ ...categoryData, [field]: value });
@@ -61,6 +63,7 @@ export default function MovieForm({
         helpText="Use TMDb or IMDb poster URL for best quality"
         required
         disabled={loading}
+        onImageSearch={onImageSearch}
       />
 
       <FormField

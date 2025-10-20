@@ -17,6 +17,7 @@ interface RestaurantFormProps {
   onImageChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onCategoryDataChange: (data: Partial<RestaurantData>) => void;
+  onImageSearch?: () => void;
 }
 
 export default function RestaurantForm({
@@ -25,12 +26,13 @@ export default function RestaurantForm({
   description,
   categoryData,
   fieldErrors,
-  warnings,
+  warnings: _warnings,
   loading,
   onNameChange,
   onImageChange,
   onDescriptionChange,
   onCategoryDataChange,
+  onImageSearch,
 }: RestaurantFormProps) {
   const updateField = (field: keyof RestaurantData, value: any) => {
     onCategoryDataChange({ ...categoryData, [field]: value });
@@ -61,6 +63,7 @@ export default function RestaurantForm({
         helpText="A high-quality photo of the restaurant or its signature dish"
         required
         disabled={loading}
+        onImageSearch={onImageSearch}
       />
 
       <FormField

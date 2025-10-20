@@ -13,6 +13,7 @@ import MovieForm from './forms/MovieForm';
 import TVShowForm from './forms/TVShowForm';
 import RestaurantForm from './forms/RestaurantForm';
 import { QuickAddForm } from './QuickAddForm';
+import { ImageSearchModal } from './ImageSearchModal';
 
 type AddMethod = 'manual' | 'quick';
 
@@ -31,6 +32,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
 
   // Common fields
   const [name, setName] = useState('');
@@ -372,6 +374,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
                   onImageChange={setImage}
                   onDescriptionChange={setDescription}
                   onCategoryDataChange={setCategoryData}
+                  onImageSearch={() => setShowImageSearch(true)}
                 />
               )}
 
@@ -388,6 +391,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
                   onImageChange={setImage}
                   onDescriptionChange={setDescription}
                   onCategoryDataChange={setCategoryData}
+                  onImageSearch={() => setShowImageSearch(true)}
                 />
               )}
 
@@ -404,6 +408,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
                   onImageChange={setImage}
                   onDescriptionChange={setDescription}
                   onCategoryDataChange={setCategoryData}
+                  onImageSearch={() => setShowImageSearch(true)}
                 />
               )}
 
@@ -420,6 +425,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
                   onImageChange={setImage}
                   onDescriptionChange={setDescription}
                   onCategoryDataChange={setCategoryData}
+                  onImageSearch={() => setShowImageSearch(true)}
                 />
               )}
 
@@ -457,6 +463,18 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
           )}
         </div>
       </div>
+
+      {/* Image Search Modal */}
+      <ImageSearchModal
+        isOpen={showImageSearch}
+        onClose={() => setShowImageSearch(false)}
+        onSelectImage={(url) => {
+          setImage(url);
+          setShowImageSearch(false);
+        }}
+        category={category}
+        searchQuery={name}
+      />
     </div>
   );
 }

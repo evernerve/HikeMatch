@@ -17,6 +17,7 @@ interface HikeFormProps {
   onImageChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onCategoryDataChange: (data: Partial<HikeData>) => void;
+  onImageSearch?: () => void;
 }
 
 export default function HikeForm({
@@ -31,6 +32,7 @@ export default function HikeForm({
   onImageChange,
   onDescriptionChange,
   onCategoryDataChange,
+  onImageSearch,
 }: HikeFormProps) {
   const updateField = (field: keyof HikeData, value: any) => {
     onCategoryDataChange({ ...categoryData, [field]: value });
@@ -61,6 +63,7 @@ export default function HikeForm({
         helpText="Direct link to an image (JPG, PNG, etc.) or from a trusted host"
         required
         disabled={loading}
+        onImageSearch={onImageSearch}
       />
 
       <FormField
