@@ -12,10 +12,13 @@ import {
   getDocs,
   query,
   where,
+  updateDoc,
+  deleteDoc,
   Timestamp,
   onSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { CategoryType, SwipeItem, HikeData, MovieData, TVData, RestaurantData } from '../types/categories';
 
 // Types
 export interface Trail {
@@ -625,8 +628,6 @@ export const checkConnection = async (userId: string): Promise<boolean> => {
 // MULTI-CATEGORY FUNCTIONS (NEW - Backward Compatible)
 // ============================================================================
 
-import { SwipeItem, CategoryType } from '../types/categories';
-
 /**
  * Helper to convert Trail to SwipeItem format for backward compatibility
  */
@@ -833,4 +834,235 @@ const checkForCategoryMatches = async (
       }
     }
   }
+};
+
+/**
+ * Create a new user-contributed item
+ */
+export const createUserContribution = async (
+  category: CategoryType,
+  name: string,
+  image: string,
+  description: string,
+  categoryData: HikeData | MovieData | TVData | RestaurantData
+): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to contribute');
+  }
+
+  const userId = auth.currentUser.uid;
+  const userProfile = await getUserProfile(userId);
+
+  // Determine collection name based on category
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  
+  // Create the item
+  const itemRef = doc(collection(db, collectionName));
+  const itemId = itemRef.id;
+
+  const newItem: SwipeItem = {
+    id: itemId,
+    category,
+    name: name.trim(),
+    image: image.trim(),
+    description: description.trim(),
+    categoryData,
+    createdBy: userId,  // Track who created this item
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  };
+
+  await setDoc(itemRef, newItem);
+
+  // Track contribution
+  const contributionRef = doc(collection(db, 'userContributions'));
+  await setDoc(contributionRef, {
+    id: contributionRef.id,
+    userId,
+    username: userProfile?.username || 'anonymous',
+    displayName: userProfile?.displayName || 'Anonymous User',
+    category,
+    itemId,
+    itemName: name,
+    status: 'active',
+    contributedAt: Timestamp.now(),
+    upvotes: 0,
+    downvotes: 0,
+  });
+
+  console.log('✨ User contribution created!', { itemId, category, userId });
+  return itemId;
+};
+
+/**
+ * Get all contributions by a specific user with full item data
+ */
+export const getUserContributions = async (userId: string): Promise<SwipeItem[]> => {
+  try {
+    const contributions: SwipeItem[] = [];
+    
+    // Query userContributions collection for this user
+    // Simple query with only where clause - no orderBy to avoid composite index
+    const contributionsRef = collection(db, 'userContributions');
+    const q = query(
+      contributionsRef,
+      where('userId', '==', userId)
+    );
+    
+    const contributionsSnapshot = await getDocs(q);
+    
+    // Collect all contributions with their timestamps for sorting
+    const contributionsWithTime: Array<{ item: SwipeItem; contributedAt: any }> = [];
+    
+    // Fetch each actual item (only active contributions)
+    for (const contributionDoc of contributionsSnapshot.docs) {
+      const contribution = contributionDoc.data();
+      
+      // Filter by status in memory
+      if (contribution.status !== 'active') {
+        continue;
+      }
+      
+      const { category, itemId, contributedAt } = contribution;
+      
+      // Determine collection name
+      const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+      
+      // Fetch the actual item
+      const itemRef = doc(db, collectionName, itemId);
+      const itemDoc = await getDoc(itemRef);
+      
+      if (itemDoc.exists()) {
+        contributionsWithTime.push({
+          item: itemDoc.data() as SwipeItem,
+          contributedAt
+        });
+      }
+    }
+    
+    // Sort by contributedAt in memory (newest first)
+    contributionsWithTime.sort((a, b) => {
+      const timeA = a.contributedAt?.toMillis?.() || 0;
+      const timeB = b.contributedAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+    
+    // Extract just the items
+    return contributionsWithTime.map(c => c.item);
+    
+    return contributions;
+  } catch (error) {
+    console.error('Error fetching user contributions:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a user contribution
+ */
+export const updateUserContribution = async (
+  itemId: string,
+  category: CategoryType,
+  updates: Partial<SwipeItem>
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to update items');
+  }
+
+  const userId = auth.currentUser.uid;
+  
+  // Verify ownership by checking userContributions collection
+  const contributionsRef = collection(db, 'userContributions');
+  const q = query(
+    contributionsRef,
+    where('userId', '==', userId),
+    where('itemId', '==', itemId)
+  );
+  
+  const contributionsSnapshot = await getDocs(q);
+  
+  if (contributionsSnapshot.empty) {
+    throw new Error('You can only edit your own contributions');
+  }
+  
+  // Determine collection name
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  const itemRef = doc(db, collectionName, itemId);
+  
+  // Check if item exists
+  const itemDoc = await getDoc(itemRef);
+  if (!itemDoc.exists()) {
+    throw new Error('Item not found');
+  }
+  
+  // For items with createdBy field, verify it matches (extra security for new items)
+  const itemData = itemDoc.data() as SwipeItem;
+  if (itemData.createdBy && itemData.createdBy !== userId) {
+    throw new Error('You can only edit your own contributions');
+  }
+  
+  // Update the item
+  await updateDoc(itemRef, {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  });
+  
+  console.log('✅ Contribution updated!', { itemId, category });
+};
+
+/**
+ * Delete a user contribution (soft delete)
+ */
+export const deleteUserContribution = async (
+  itemId: string,
+  category: CategoryType
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to delete items');
+  }
+
+  const userId = auth.currentUser.uid;
+  
+  // Verify ownership by checking userContributions collection
+  const contributionsRef = collection(db, 'userContributions');
+  const q = query(
+    contributionsRef,
+    where('userId', '==', userId),
+    where('itemId', '==', itemId)
+  );
+  
+  const contributionsSnapshot = await getDocs(q);
+  
+  if (contributionsSnapshot.empty) {
+    throw new Error('You can only delete your own contributions');
+  }
+  
+  // Determine collection name
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  const itemRef = doc(db, collectionName, itemId);
+  
+  // Check if item exists
+  const itemDoc = await getDoc(itemRef);
+  if (!itemDoc.exists()) {
+    throw new Error('Item not found');
+  }
+  
+  // For items with createdBy field, verify it matches (extra security for new items)
+  const itemData = itemDoc.data() as SwipeItem;
+  if (itemData.createdBy && itemData.createdBy !== userId) {
+    throw new Error('You can only delete your own contributions');
+  }
+  
+  // Delete the item from the collection
+  await deleteDoc(itemRef);
+  
+  // Update userContributions status to deleted
+  for (const contributionDoc of contributionsSnapshot.docs) {
+    await updateDoc(doc(db, 'userContributions', contributionDoc.id), {
+      status: 'deleted',
+      deletedAt: Timestamp.now(),
+    });
+  }
+  
+  console.log('🗑️ Contribution deleted!', { itemId, category });
 };

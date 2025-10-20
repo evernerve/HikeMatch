@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Matches from './pages/Matches';
 import MySwipes from './pages/MySwipes';
 import Connections from './pages/Connections';
+import MyContributions from './pages/MyContributions';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -53,6 +54,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/my-swipes" element={<MySwipes />} />
+              <Route path="/contributions" element={<MyContributions />} />
               <Route path="/connections" element={<Connections />} />
               <Route path="/matches" element={<Matches />} />
               <Route path="*" element={<Navigate to="/" replace />} />

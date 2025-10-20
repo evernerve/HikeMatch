@@ -89,6 +89,18 @@ export default function Navbar() {
               <span className="text-xl sm:text-base">💚</span>
               <span className="hidden sm:inline ml-1">Matches</span>
             </Link>
+            <Link
+              to="/contributions"
+              className={`px-2 sm:px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                location.pathname === '/contributions'
+                  ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm'
+                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
+              title="My Contributions"
+            >
+              <span className="text-xl sm:text-base">📝</span>
+              <span className="hidden sm:inline ml-1">Mine</span>
+            </Link>
             
             {/* User Display Name - Hidden on mobile */}
             {displayName && (

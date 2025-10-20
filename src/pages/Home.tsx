@@ -6,6 +6,9 @@ import { auth } from '../lib/firebase';
 import { useCategory } from '../context/CategoryContext';
 import CategoryCard from '../components/CategoryCard';
 import CategorySelector from '../components/CategorySelector';
+import AddItemButton from '../components/AddItemButton';
+import AddItemModal from '../components/AddItemModal';
+import Toast from '../components/Toast';
 
 export default function Home() {
   const { activeCategory } = useCategory();
@@ -13,6 +16,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastDirection, setLastDirection] = useState<string>('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     loadItems();
@@ -78,6 +84,17 @@ export default function Home() {
             <p className="text-gray-600 font-medium">Loading items...</p>
           </div>
         </div>
+
+        {/* Add Item FAB - Always visible */}
+        <AddItemButton onClick={() => setShowAddModal(true)} />
+
+        {/* Add Item Modal */}
+        <AddItemModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          activeCategory={activeCategory}
+          onSuccess={loadItems}
+        />
       </div>
     );
   }
@@ -103,6 +120,17 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* Add Item FAB - Always visible */}
+        <AddItemButton onClick={() => setShowAddModal(true)} />
+
+        {/* Add Item Modal */}
+        <AddItemModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          activeCategory={activeCategory}
+          onSuccess={loadItems}
+        />
       </div>
     );
   }
@@ -188,6 +216,30 @@ export default function Home() {
         </div>
         </div>
       </div>
+
+      {/* Add Item FAB */}
+      <AddItemButton onClick={() => setShowAddModal(true)} />
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        activeCategory={activeCategory}
+        onSuccess={() => {
+          setToastMessage('✨ Your contribution has been added!');
+          setShowToast(true);
+          loadItems(); // Reload items to show the new one
+        }}
+      />
+
+      {/* Success Toast */}
+      <Toast
+        isOpen={showToast}
+        message={toastMessage}
+        type="success"
+        onClose={() => setShowToast(false)}
+      />
     </div>
   );
 }
+

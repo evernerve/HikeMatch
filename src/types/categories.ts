@@ -127,6 +127,7 @@ export interface SwipeItem {
   image: string;  // Universal field (poster for movies, photo for restaurants)
   description: string;  // Universal short description
   categoryData: HikeData | MovieData | TVData | RestaurantData;
+  createdBy?: string;  // userId of creator (for user contributions)
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
