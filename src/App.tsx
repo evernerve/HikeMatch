@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import { CategoryProvider } from './context/CategoryContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import AuthForm from './components/AuthForm';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -36,24 +37,30 @@ function App() {
   }
 
   if (!user) {
-    return <AuthForm onAuthSuccess={() => setUser(auth.currentUser)} />;
+    return (
+      <ErrorBoundary>
+        <AuthForm onAuthSuccess={() => setUser(auth.currentUser)} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <CategoryProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/my-swipes" element={<MySwipes />} />
-            <Route path="/connections" element={<Connections />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </Router>
-    </CategoryProvider>
+    <ErrorBoundary>
+      <CategoryProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/my-swipes" element={<MySwipes />} />
+              <Route path="/connections" element={<Connections />} />
+              <Route path="/matches" element={<Matches />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Router>
+      </CategoryProvider>
+    </ErrorBoundary>
   );
 }
 

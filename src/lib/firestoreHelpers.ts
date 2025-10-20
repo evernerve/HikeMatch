@@ -98,25 +98,39 @@ export const isUsernameTaken = async (username: string): Promise<boolean> => {
  * Sign up a new user with username, email and password
  */
 export const signUp = async (username: string, email: string, password: string, displayName: string): Promise<User> => {
-  // Check if username is taken
-  const usernameTaken = await isUsernameTaken(username);
-  if (usernameTaken) {
-    throw new Error('Username is already taken');
+  try {
+    // Normalize inputs
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedDisplayName = displayName.trim();
+
+    // Check if username is taken
+    const usernameTaken = await isUsernameTaken(normalizedUsername);
+    if (usernameTaken) {
+      const error: any = new Error('Username is already taken');
+      error.code = 'app/username-taken';
+      throw error;
+    }
+
+    // Create Firebase auth account
+    const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+    const user = userCredential.user;
+
+    // Create user profile in Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      displayName: normalizedDisplayName,
+      username: normalizedUsername,
+      email: normalizedEmail,
+      createdAt: Timestamp.now(),
+    });
+
+    return user;
+  } catch (error: any) {
+    // Re-throw with additional context
+    console.error('Sign up error:', error);
+    throw error;
   }
-
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
-
-  // Create user profile in Firestore
-  await setDoc(doc(db, 'users', user.uid), {
-    uid: user.uid,
-    displayName,
-    username: username.toLowerCase(),
-    email,
-    createdAt: Timestamp.now(),
-  });
-
-  return user;
 };
 
 /**
@@ -139,15 +153,26 @@ export const getEmailFromUsername = async (username: string): Promise<string | n
  * Sign in an existing user with username and password
  */
 export const signIn = async (username: string, password: string): Promise<User> => {
-  // Look up email from username
-  const email = await getEmailFromUsername(username);
-  
-  if (!email) {
-    throw new Error('Username not found');
+  try {
+    // Normalize username
+    const normalizedUsername = username.trim().toLowerCase();
+
+    // Look up email from username
+    const email = await getEmailFromUsername(normalizedUsername);
+    
+    if (!email) {
+      const error: any = new Error('Username not found');
+      error.code = 'app/username-not-found';
+      throw error;
+    }
+    
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    // Re-throw with additional context
+    console.error('Sign in error:', error);
+    throw error;
   }
-  
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
 };
 
 /**

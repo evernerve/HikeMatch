@@ -1,5 +1,14 @@
 import { useState, FormEvent } from 'react';
 import { signIn, signUp } from '../lib/firestoreHelpers';
+import { 
+  getAuthErrorMessage, 
+  isValidEmail, 
+  isValidUsername, 
+  isValidPassword, 
+  isValidDisplayName,
+  sanitizeInput,
+  logError 
+} from '../lib/errorHandling';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -13,36 +22,122 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Clear errors when switching between login/signup
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setFieldErrors({});
+  };
+
+  // Validate individual fields on blur
+  const validateField = (field: string, value: string) => {
+    const newFieldErrors = { ...fieldErrors };
+
+    switch (field) {
+      case 'username':
+        const usernameValidation = isValidUsername(value);
+        if (!usernameValidation.valid && value.length > 0) {
+          newFieldErrors.username = usernameValidation.message || '';
+        } else {
+          delete newFieldErrors.username;
+        }
+        break;
+
+      case 'email':
+        if (!isValidEmail(value) && value.length > 0) {
+          newFieldErrors.email = 'Please enter a valid email address.';
+        } else {
+          delete newFieldErrors.email;
+        }
+        break;
+
+      case 'password':
+        const passwordValidation = isValidPassword(value);
+        if (!passwordValidation.valid && value.length > 0) {
+          newFieldErrors.password = passwordValidation.message || '';
+        } else {
+          delete newFieldErrors.password;
+        }
+        break;
+
+      case 'displayName':
+        const displayNameValidation = isValidDisplayName(value);
+        if (!displayNameValidation.valid && value.length > 0) {
+          newFieldErrors.displayName = displayNameValidation.message || '';
+        } else {
+          delete newFieldErrors.displayName;
+        }
+        break;
+    }
+
+    setFieldErrors(newFieldErrors);
+  };
+
+  // Validate all fields before submission
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!isLogin) {
+      // Sign up validations
+      const displayNameValidation = isValidDisplayName(displayName);
+      if (!displayNameValidation.valid) {
+        errors.displayName = displayNameValidation.message || '';
+      }
+
+      const usernameValidation = isValidUsername(username);
+      if (!usernameValidation.valid) {
+        errors.username = usernameValidation.message || '';
+      }
+
+      if (!isValidEmail(email)) {
+        errors.email = 'Please enter a valid email address.';
+      }
+    } else {
+      // Login validations
+      if (!username.trim()) {
+        errors.username = 'Username is required.';
+      }
+    }
+
+    const passwordValidation = isValidPassword(password);
+    if (!passwordValidation.valid) {
+      errors.password = passwordValidation.message || '';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    // Validate form
+    if (!validateForm()) {
+      setError('Please fix the errors above before continuing.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (isLogin) {
-        await signIn(username, password);
+        await signIn(sanitizeInput(username), password);
       } else {
-        if (!displayName.trim()) {
-          setError('Display name is required');
-          setLoading(false);
-          return;
-        }
-        if (!username.trim()) {
-          setError('Username is required');
-          setLoading(false);
-          return;
-        }
-        if (!email.trim()) {
-          setError('Email is required');
-          setLoading(false);
-          return;
-        }
-        await signUp(username, email, password, displayName);
+        await signUp(
+          sanitizeInput(username),
+          sanitizeInput(email),
+          password,
+          sanitizeInput(displayName)
+        );
       }
       onAuthSuccess();
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      logError(isLogin ? 'Sign In' : 'Sign Up', err);
+      const userMessage = getAuthErrorMessage(err);
+      setError(userMessage);
     } finally {
       setLoading(false);
     }
@@ -63,7 +158,8 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         {/* Toggle between Login/Signup */}
         <div className="flex mb-4 sm:mb-6 bg-primary-50 rounded-lg sm:rounded-xl p-1 sm:p-1.5 border border-primary-200">
           <button
-            onClick={() => setIsLogin(true)}
+            type="button"
+            onClick={toggleMode}
             className={`flex-1 py-2 sm:py-2.5 rounded-md sm:rounded-lg font-semibold transition-all duration-200 text-sm sm:text-base ${
               isLogin
                 ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
@@ -73,7 +169,8 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
             Login
           </button>
           <button
-            onClick={() => setIsLogin(false)}
+            type="button"
+            onClick={toggleMode}
             className={`flex-1 py-2 sm:py-2.5 rounded-md sm:rounded-lg font-semibold transition-all duration-200 text-sm sm:text-base ${
               !isLogin
                 ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
@@ -86,8 +183,9 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs sm:text-sm">
-            {error}
+          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-50 border border-red-300 text-red-800 rounded-lg text-xs sm:text-sm flex items-start">
+            <span className="mr-2 flex-shrink-0">⚠️</span>
+            <span className="flex-1">{error}</span>
           </div>
         )}
 
@@ -103,10 +201,17 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="input-field text-sm sm:text-base"
+                  onBlur={(e) => validateField('displayName', e.target.value)}
+                  className={`input-field text-sm sm:text-base ${
+                    fieldErrors.displayName ? 'border-red-400 focus:ring-red-500' : ''
+                  }`}
                   placeholder="Your hiking name"
                   required={!isLogin}
+                  disabled={loading}
                 />
+                {fieldErrors.displayName && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.displayName}</p>
+                )}
               </div>
 
               <div>
@@ -117,12 +222,23 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="input-field text-sm sm:text-base"
+                  onBlur={(e) => validateField('username', e.target.value)}
+                  className={`input-field text-sm sm:text-base ${
+                    fieldErrors.username ? 'border-red-400 focus:ring-red-500' : ''
+                  }`}
                   placeholder="hikerlover123"
                   required={!isLogin}
-                  pattern="[a-zA-Z0-9_]+"
-                  title="Username can only contain letters, numbers, and underscores"
+                  disabled={loading}
+                  autoComplete="username"
                 />
+                {fieldErrors.username && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
+                )}
+                {!fieldErrors.username && !isLogin && username.length > 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    ✓ Username looks good
+                  </p>
+                )}
               </div>
 
               <div>
@@ -133,10 +249,18 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-field text-sm sm:text-base"
+                  onBlur={(e) => validateField('email', e.target.value)}
+                  className={`input-field text-sm sm:text-base ${
+                    fieldErrors.email ? 'border-red-400 focus:ring-red-500' : ''
+                  }`}
                   placeholder="you@example.com"
                   required={!isLogin}
+                  disabled={loading}
+                  autoComplete="email"
                 />
+                {fieldErrors.email && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+                )}
               </div>
             </>
           )}
@@ -150,10 +274,18 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="input-field text-sm sm:text-base"
+                onBlur={(e) => validateField('username', e.target.value)}
+                className={`input-field text-sm sm:text-base ${
+                  fieldErrors.username ? 'border-red-400 focus:ring-red-500' : ''
+                }`}
                 placeholder="hikerlover123"
                 required
+                disabled={loading}
+                autoComplete="username"
               />
+              {fieldErrors.username && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
+              )}
             </div>
           )}
 
@@ -165,19 +297,42 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input-field text-sm sm:text-base"
+              onBlur={(e) => validateField('password', e.target.value)}
+              className={`input-field text-sm sm:text-base ${
+                fieldErrors.password ? 'border-red-400 focus:ring-red-500' : ''
+              }`}
               placeholder="••••••••"
               required
               minLength={6}
+              disabled={loading}
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
             />
+            {fieldErrors.password && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
+            )}
+            {!isLogin && !fieldErrors.password && password.length > 0 && password.length >= 6 && (
+              <p className="mt-1 text-xs text-gray-500">
+                ✓ Password is strong enough
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            disabled={loading || Object.keys(fieldErrors).length > 0}
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base transition-all"
           >
-            {loading ? 'Loading...' : isLogin ? 'Login' : 'Sign Up'}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {isLogin ? 'Signing in...' : 'Creating account...'}
+              </span>
+            ) : (
+              isLogin ? 'Login' : 'Sign Up'
+            )}
           </button>
         </form>
 
