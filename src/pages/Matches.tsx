@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Match, subscribeToMatches, getConnections } from '../lib/firestoreHelpers';
 import { auth } from '../lib/firebase';
 import { useCategory } from '../context/CategoryContext';
+import { SwipeItem } from '../types/categories';
 import CategorySelector from '../components/CategorySelector';
 
 export default function Matches() {
@@ -118,37 +119,48 @@ export default function Matches() {
         {/* Matches Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredMatches.map((match, index) => {
-            // Get all usernames who liked this trail (excluding current user)
+            // Get all usernames who liked this item (excluding current user)
             const otherUsers = match.userProfiles?.filter(p => p.uid !== auth.currentUser?.uid) || [];
             const usernames = otherUsers.map(u => `@${u.username}`).join(', ');
             
+            // Get the matched item (could be trail or any other category item)
+            const matchedItem = match.item || match.trail;
+            const matchCategory = (match as any).category || 'hikes';
+            
+            if (!matchedItem) {
+              console.warn('No item data for match:', match);
+              return null;
+            }
+            
+            // Cast to SwipeItem for accessing categoryData
+            const swipeItem = matchedItem as SwipeItem;
+            const hasCategoryData = 'categoryData' in swipeItem;
+            
             return (
               <div
-                key={`${match.trailId}-${index}`}
+                key={`${match.trailId || match.itemId}-${index}`}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
               >
-                {/* Trail Image */}
-                {match.trail && (
-                  <div className="relative h-40 sm:h-48 overflow-hidden">
-                    <img
-                      src={match.trail.image}
-                      alt={match.trail.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    
-                    {/* Match Badge */}
-                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold shadow-lg animate-pulse">
-                      ✓ Match!
-                    </div>
+                {/* Item Image */}
+                <div className="relative h-40 sm:h-48 overflow-hidden">
+                  <img
+                    src={matchedItem.image}
+                    alt={matchedItem.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  
+                  {/* Match Badge */}
+                  <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold shadow-lg animate-pulse">
+                    ✓ Match!
                   </div>
-                )}
+                </div>
 
                 {/* Match Info */}
                 <div className="p-3 sm:p-5">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
-                    {match.trail?.name || 'Trail'}
+                    {matchedItem.name}
                   </h3>
                   
                   {/* Who Liked */}
@@ -161,30 +173,97 @@ export default function Matches() {
                     </p>
                   </div>
 
-                  {match.trail && (
-                    <>
-                      <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
-                        {match.trail.description}
-                      </p>
+                  <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
+                    {matchedItem.description}
+                  </p>
 
-                      {/* Trail Details */}
+                  {/* Category-Specific Details */}
+                  {matchCategory === 'hikes' && hasCategoryData && 'lengthKm' in (swipeItem.categoryData || {}) && (
+                    <>
                       <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
                         <span className="flex items-center">
-                          📏 {match.trail.lengthKm} km
+                          📏 {(swipeItem.categoryData as any).lengthKm} km
                         </span>
                         <span className="flex items-center">
-                          ⏱️ {match.trail.durationHours} hrs
+                          ⏱️ {(swipeItem.categoryData as any).durationHours} hrs
                         </span>
                       </div>
-
-                      {/* Tags */}
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <span className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                          {match.trail.pathType}
+                          {(swipeItem.categoryData as any).pathType}
                         </span>
                         <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          {match.trail.scenery}
+                          {(swipeItem.categoryData as any).scenery}
                         </span>
+                      </div>
+                    </>
+                  )}
+                  
+                  {matchCategory === 'movies' && hasCategoryData && 'runtime' in (swipeItem.categoryData || {}) && (
+                    <>
+                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                        <span className="flex items-center">
+                          🎬 {(swipeItem.categoryData as any).year}
+                        </span>
+                        <span className="flex items-center">
+                          ⏱️ {(swipeItem.categoryData as any).runtime} min
+                        </span>
+                        <span className="flex items-center">
+                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {(swipeItem.categoryData as any).genres.slice(0, 3).map((genre: string, i: number) => (
+                          <span key={i} className="px-2 sm:px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  
+                  {matchCategory === 'tv' && hasCategoryData && 'seasons' in (swipeItem.categoryData || {}) && (
+                    <>
+                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                        <span className="flex items-center">
+                          📺 {(swipeItem.categoryData as any).seasons} seasons
+                        </span>
+                        <span className="flex items-center">
+                          📖 {(swipeItem.categoryData as any).episodes} episodes
+                        </span>
+                        <span className="flex items-center">
+                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {(swipeItem.categoryData as any).genres.slice(0, 3).map((genre: string, i: number) => (
+                          <span key={i} className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  
+                  {matchCategory === 'restaurants' && hasCategoryData && 'cuisine' in (swipeItem.categoryData || {}) && (
+                    <>
+                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                        <span className="flex items-center">
+                          💰 {(swipeItem.categoryData as any).priceRange}
+                        </span>
+                        <span className="flex items-center">
+                          📍 {(swipeItem.categoryData as any).location}
+                        </span>
+                        <span className="flex items-center">
+                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {(swipeItem.categoryData as any).cuisine.slice(0, 3).map((cuisine: string, i: number) => (
+                          <span key={i} className="px-2 sm:px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                            {cuisine}
+                          </span>
+                        ))}
                       </div>
                     </>
                   )}
@@ -198,7 +277,7 @@ export default function Matches() {
                 </div>
               </div>
             );
-          })}
+          }).filter(Boolean)}
         </div>
 
         {/* Call to Action */}

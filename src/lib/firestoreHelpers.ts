@@ -54,10 +54,13 @@ export interface Swipe {
 
 export interface Match {
   trailId: string;
+  itemId?: string;
+  category?: string;
   userIds: string[];
   userProfiles: { uid: string; username: string; displayName: string }[];
   matchedAt: Timestamp;
   trail?: Trail;
+  item?: SwipeItem;
 }
 
 export interface ConnectionRequest {
@@ -373,12 +376,36 @@ export const subscribeToMatches = (
     
     for (const docSnap of snapshot.docs) {
       const matchData = docSnap.data();
-      const trail = await getTrailById(matchData.trailId);
+      
+      // Get the matched item based on category
+      const category = (matchData.category || 'hikes') as CategoryType;
+      const itemId = matchData.itemId || matchData.trailId;
+      
+      let matchedItem: SwipeItem | null = null;
+      
+      if (category === 'hikes') {
+        const trail = await getTrailById(itemId);
+        if (trail) {
+          matchedItem = trailToSwipeItem(trail);
+        }
+      } else {
+        const collectionName = getCategoryCollection(category);
+        const itemRef = doc(db, collectionName, itemId);
+        const itemSnap = await getDoc(itemRef);
+        
+        if (itemSnap.exists()) {
+          matchedItem = {
+            id: itemSnap.id,
+            ...itemSnap.data(),
+          } as SwipeItem;
+        }
+      }
       
       matches.push({
         ...matchData,
-        trail: trail || undefined,
-      } as Match);
+        trail: category === 'hikes' ? matchedItem : undefined, // Keep for backward compatibility
+        item: matchedItem || undefined,
+      } as any);
     }
     
     callback(matches);
