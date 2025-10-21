@@ -1,0 +1,32 @@
+0000000000000000000000000000000000000000 e9a09dc335ad0ae6fde3604ab7428dd15a51e8a6 Raef Larbi <raeflarbi55@gmail.com> 1760463383 +0200	commit (initial): Initial HikeMatch deployment - working PWA with Firebase
+e9a09dc335ad0ae6fde3604ab7428dd15a51e8a6 e9a09dc335ad0ae6fde3604ab7428dd15a51e8a6 Raef Larbi <raeflarbi55@gmail.com> 1760463383 +0200	Branch: renamed refs/heads/main to refs/heads/main
+e9a09dc335ad0ae6fde3604ab7428dd15a51e8a6 5dc3a39e43ba59f8010a5ce4877ed3c1b571ff56 Raef Larbi <raeflarbi55@gmail.com> 1760463764 +0200	commit: Simplify vercel.json configuration
+5dc3a39e43ba59f8010a5ce4877ed3c1b571ff56 b15d09847a27849c39778087bc3a31ecb49e09c3 Raef Larbi <raeflarbi55@gmail.com> 1760463865 +0200	commit: Fix TypeScript build errors - remove unused imports
+b15d09847a27849c39778087bc3a31ecb49e09c3 6ee665573387a11a71e571d96f197060db2e15d7 Raef Larbi <raeflarbi55@gmail.com> 1760463997 +0200	commit: Fix typo
+6ee665573387a11a71e571d96f197060db2e15d7 8d1302b2212040b44e6e4ac22af3a058da3aa40f Raef Larbi <raeflarbi55@gmail.com> 1760465421 +0200	commit: Add My Swipes page with reset/delete features and fix card clipping on swipe
+8d1302b2212040b44e6e4ac22af3a058da3aa40f a952982eaab47a91b9d7104b578ad4ae57029bc1 Raef Larbi <raeflarbi55@gmail.com> 1760466765 +0200	commit: Improve UI: fix input text color and add custom modals/toasts
+a952982eaab47a91b9d7104b578ad4ae57029bc1 0e24c40256d6065f6e034fcb496c212ada17fb8e Raef Larbi <raeflarbi55@gmail.com> 1760467777 +0200	commit: switch to username-based authentication
+0e24c40256d6065f6e034fcb496c212ada17fb8e 5f41d661f715421fffae4da021dc8c01de2acf59 Raef Larbi <raeflarbi55@gmail.com> 1760468536 +0200	commit: Add friend connection system with invite/accept flow
+5f41d661f715421fffae4da021dc8c01de2acf59 7e5bf43fb721d4e741120ad274ce7db5f69516f8 Raef Larbi <raeflarbi55@gmail.com> 1760470536 +0200	commit: Optimize for mobile performance to prevent browser crashes
+7e5bf43fb721d4e741120ad274ce7db5f69516f8 108590b7375a5fca39eb8b2fe203447c1120963e Raef Larbi <raeflarbi55@gmail.com> 1760471475 +0200	commit: Make entire app responsive for mobile screens
+108590b7375a5fca39eb8b2fe203447c1120963e 1b331a111d8e96c08499957cbee4461df849cfde Raef Larbi <raeflarbi55@gmail.com> 1760473729 +0200	commit: Replace trails with more relevant hiking routes
+1b331a111d8e96c08499957cbee4461df849cfde 922e0e8be4aa158eef2bd2f7b6821b59e500525a Raef Larbi <raeflarbi55@gmail.com> 1760474899 +0200	commit: Redesign trail cards with relevant hiking categories
+922e0e8be4aa158eef2bd2f7b6821b59e500525a 4acfafc8d6e8cbb61999cfe50d094d2dff8363b7 Raef Larbi <raeflarbi55@gmail.com> 1760476791 +0200	commit: Add flip card feature with detailed trail info and blurred background
+4acfafc8d6e8cbb61999cfe50d094d2dff8363b7 850c25811030cc25f954f3fc26bbbba85d2c0122 Raef Larbi <raeflarbi55@gmail.com> 1760477439 +0200	commit: Improve layout: remove header, move instructions below cards
+850c25811030cc25f954f3fc26bbbba85d2c0122 17eb7fc85ac21b7e61d939f63e69b3d4c58ca458 Raef Larbi <raeflarbi55@gmail.com> 1760477753 +0200	commit: Fix modal button colors and add click-to-flip-back on card
+17eb7fc85ac21b7e61d939f63e69b3d4c58ca458 1df9eb681fc2fa6acf709f6041639cec8dfd42ea Raef Larbi <raeflarbi55@gmail.com> 1760478494 +0200	commit: Restore green-blue gradient, fix autofill styling, remove demo login
+1df9eb681fc2fa6acf709f6041639cec8dfd42ea 363bb626feb895cc2ebdba894ba6668f2995c833 Raef Larbi <raeflarbi55@gmail.com> 1760478967 +0200	commit: Fix build: remove unused initializeTrails function with incomplete sample data
+363bb626feb895cc2ebdba894ba6668f2995c833 c38a0e4680e0d5806cdd78858410e45954271349 Raef Larbi <raeflarbi55@gmail.com> 1760479120 +0200	commit: Add multi-category architecture plan and TypeScript type definitions
+c38a0e4680e0d5806cdd78858410e45954271349 0512b19ee0fe08702dc9adc80d01c05323bdde87 Raef Larbi <raeflarbi55@gmail.com> 1760479348 +0200	commit: Fix mobile card flip: add touch event handlers to detect taps vs swipes
+0512b19ee0fe08702dc9adc80d01c05323bdde87 09f6fae97763d1d3cb7c50c0e44c71f1ff5d9772 Raef Larbi <raeflarbi55@gmail.com> 1760479508 +0200	commit: Fix mobile scrolling: prevent scroll gestures from triggering card swipe
+09f6fae97763d1d3cb7c50c0e44c71f1ff5d9772 5c6f8435d67ed892fb0949245b937fe5904beb47 Raef Larbi <raeflarbi55@gmail.com> 1760479757 +0200	commit: Improve mobile scroll: use touchAction pan-y and detect vertical scroll intent
+5c6f8435d67ed892fb0949245b937fe5904beb47 04cb747619044472caec56c36fb8f22036d1db39 Raef Larbi <raeflarbi55@gmail.com> 1760479847 +0200	commit: Fix build: remove unused isScrolling state variable
+04cb747619044472caec56c36fb8f22036d1db39 204fa80f50e529e7b27f48e8ae76349b269d8d3c Raef Larbi <raeflarbi55@gmail.com> 1760480049 +0200	commit: Add native touch event listener to prevent swipe during scroll
+204fa80f50e529e7b27f48e8ae76349b269d8d3c 98e73fdc35c9f421dd31ae5b2152f72e58eab472 Raef Larbi <raeflarbi55@gmail.com> 1760480282 +0200	commit: Allow vertical scrolling while blocking horizontal swipes in scroll area
+98e73fdc35c9f421dd31ae5b2152f72e58eab472 4861f123ad2e932316bbb7f6110591d0c74eabb5 Raef Larbi <raeflarbi55@gmail.com> 1760480491 +0200	commit: Smart scroll detection: only block swipe when actually scrolling content
+4861f123ad2e932316bbb7f6110591d0c74eabb5 21a88d6468e42737a59b98034d31fb8e8337dffa Raef Larbi <raeflarbi55@gmail.com> 1760480666 +0200	commit: Fix scrolling: remove touch handlers from back card, make only header clickable
+21a88d6468e42737a59b98034d31fb8e8337dffa 3eddf5d5f9d9706b65a417d1d82d634a6efb2d86 Raef Larbi <raeflarbi55@gmail.com> 1760480817 +0200	commit: Fix scroll: position content absolutely below header to create overflow
+3eddf5d5f9d9706b65a417d1d82d634a6efb2d86 a4ee370ae515bc29d7020fa7d477858238c1353c Raef Larbi <raeflarbi55@gmail.com> 1760481077 +0200	commit: Add continuous scroll buttons: scroll while button is held down
+a4ee370ae515bc29d7020fa7d477858238c1353c 3ac957fcc4981ff6b60fb2f1e06b1bc5524117a5 Raef Larbi <raeflarbi55@gmail.com> 1760481267 +0200	commit: Clean up: remove unused scroll detection code, rely on scroll buttons
+3ac957fcc4981ff6b60fb2f1e06b1bc5524117a5 3200ffbb24c376c6d92585492913a80dcf314683 Raef Larbi <raeflarbi55@gmail.com> 1760481532 +0200	commit: Fix mobile flip-back: add onTouchEnd handlers to back card elements
+3200ffbb24c376c6d92585492913a80dcf314683 bd357436ba9e90f23ce6cecc6ac83c40b9a4638a Raef Larbi <raeflarbi55@gmail.com> 1760481697 +0200	commit: Allow tapping anywhere on back card description area to flip back

@@ -12,10 +12,13 @@ import {
   getDocs,
   query,
   where,
+  updateDoc,
+  deleteDoc,
   Timestamp,
   onSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { CategoryType, SwipeItem, HikeData, MovieData, TVData, RestaurantData } from '../types/categories';
 
 // Types
 export interface Trail {
@@ -54,10 +57,13 @@ export interface Swipe {
 
 export interface Match {
   trailId: string;
+  itemId?: string;
+  category?: string;
   userIds: string[];
   userProfiles: { uid: string; username: string; displayName: string }[];
   matchedAt: Timestamp;
   trail?: Trail;
+  item?: SwipeItem;
 }
 
 export interface ConnectionRequest {
@@ -95,25 +101,39 @@ export const isUsernameTaken = async (username: string): Promise<boolean> => {
  * Sign up a new user with username, email and password
  */
 export const signUp = async (username: string, email: string, password: string, displayName: string): Promise<User> => {
-  // Check if username is taken
-  const usernameTaken = await isUsernameTaken(username);
-  if (usernameTaken) {
-    throw new Error('Username is already taken');
+  try {
+    // Normalize inputs
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedDisplayName = displayName.trim();
+
+    // Check if username is taken
+    const usernameTaken = await isUsernameTaken(normalizedUsername);
+    if (usernameTaken) {
+      const error: any = new Error('Username is already taken');
+      error.code = 'app/username-taken';
+      throw error;
+    }
+
+    // Create Firebase auth account
+    const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+    const user = userCredential.user;
+
+    // Create user profile in Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      displayName: normalizedDisplayName,
+      username: normalizedUsername,
+      email: normalizedEmail,
+      createdAt: Timestamp.now(),
+    });
+
+    return user;
+  } catch (error: any) {
+    // Re-throw with additional context
+    console.error('Sign up error:', error);
+    throw error;
   }
-
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
-
-  // Create user profile in Firestore
-  await setDoc(doc(db, 'users', user.uid), {
-    uid: user.uid,
-    displayName,
-    username: username.toLowerCase(),
-    email,
-    createdAt: Timestamp.now(),
-  });
-
-  return user;
 };
 
 /**
@@ -136,15 +156,26 @@ export const getEmailFromUsername = async (username: string): Promise<string | n
  * Sign in an existing user with username and password
  */
 export const signIn = async (username: string, password: string): Promise<User> => {
-  // Look up email from username
-  const email = await getEmailFromUsername(username);
-  
-  if (!email) {
-    throw new Error('Username not found');
+  try {
+    // Normalize username
+    const normalizedUsername = username.trim().toLowerCase();
+
+    // Look up email from username
+    const email = await getEmailFromUsername(normalizedUsername);
+    
+    if (!email) {
+      const error: any = new Error('Username not found');
+      error.code = 'app/username-not-found';
+      throw error;
+    }
+    
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    // Re-throw with additional context
+    console.error('Sign in error:', error);
+    throw error;
   }
-  
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
 };
 
 /**
@@ -373,12 +404,36 @@ export const subscribeToMatches = (
     
     for (const docSnap of snapshot.docs) {
       const matchData = docSnap.data();
-      const trail = await getTrailById(matchData.trailId);
+      
+      // Get the matched item based on category
+      const category = (matchData.category || 'hikes') as CategoryType;
+      const itemId = matchData.itemId || matchData.trailId;
+      
+      let matchedItem: SwipeItem | null = null;
+      
+      if (category === 'hikes') {
+        const trail = await getTrailById(itemId);
+        if (trail) {
+          matchedItem = trailToSwipeItem(trail);
+        }
+      } else {
+        const collectionName = getCategoryCollection(category);
+        const itemRef = doc(db, collectionName, itemId);
+        const itemSnap = await getDoc(itemRef);
+        
+        if (itemSnap.exists()) {
+          matchedItem = {
+            id: itemSnap.id,
+            ...itemSnap.data(),
+          } as SwipeItem;
+        }
+      }
       
       matches.push({
         ...matchData,
-        trail: trail || undefined,
-      } as Match);
+        trail: category === 'hikes' ? matchedItem : undefined, // Keep for backward compatibility
+        item: matchedItem || undefined,
+      } as any);
     }
     
     callback(matches);
@@ -567,4 +622,447 @@ export const checkConnection = async (userId: string): Promise<boolean> => {
   const snapshot = await getDocs(q);
   
   return !snapshot.empty;
+};
+
+// ============================================================================
+// MULTI-CATEGORY FUNCTIONS (NEW - Backward Compatible)
+// ============================================================================
+
+/**
+ * Helper to convert Trail to SwipeItem format for backward compatibility
+ */
+export const trailToSwipeItem = (trail: Trail): SwipeItem => {
+  return {
+    id: trail.id,
+    category: 'hikes',
+    name: trail.name,
+    image: trail.image,
+    description: trail.description,
+    categoryData: {
+      lengthKm: trail.lengthKm,
+      durationHours: trail.durationHours,
+      difficulty: trail.difficulty,
+      elevationGainM: trail.elevationGainM,
+      location: trail.location,
+      distanceFromMunichKm: trail.distanceFromMunichKm,
+      publicTransportTime: trail.publicTransportTime,
+      scenery: trail.scenery,
+      pathType: trail.pathType,
+      specialFeature: trail.specialFeature,
+      detailedDescription: trail.detailedDescription,
+      highlights: trail.highlights,
+    }
+  };
+};
+
+/**
+ * Get collection name for a category
+ */
+const getCategoryCollection = (category: CategoryType): string => {
+  // Map categories to their Firestore collections
+  const collectionMap: Record<CategoryType, string> = {
+    'hikes': 'trails',  // Use existing trails collection
+    'movies': 'movies',
+    'tv': 'tvShows',
+    'restaurants': 'restaurants'
+  };
+  return collectionMap[category];
+};
+
+/**
+ * Get all items for a specific category
+ */
+export const getCategoryItems = async (category: CategoryType): Promise<SwipeItem[]> => {
+  const collectionName = getCategoryCollection(category);
+  const itemsRef = collection(db, collectionName);
+  const querySnapshot = await getDocs(itemsRef);
+  
+  if (category === 'hikes') {
+    // Convert trails to SwipeItem format
+    return querySnapshot.docs.map(doc => {
+      const trail = { id: doc.id, ...doc.data() } as Trail;
+      return trailToSwipeItem(trail);
+    });
+  }
+  
+  // For other categories, data is already in SwipeItem format
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as SwipeItem));
+};
+
+/**
+ * Get unswiped items for a specific category
+ */
+export const getUnswipedCategoryItems = async (
+  userId: string,
+  category: CategoryType
+): Promise<SwipeItem[]> => {
+  const allItems = await getCategoryItems(category);
+  const swipedItemIds = await getUserCategorySwipes(userId, category);
+  
+  return allItems.filter(item => !swipedItemIds.includes(item.id));
+};
+
+/**
+ * Get user's swipes for a specific category
+ */
+export const getUserCategorySwipes = async (
+  userId: string,
+  category: CategoryType
+): Promise<string[]> => {
+  const swipesRef = collection(db, 'userSwipes', userId, 'swipes');
+  const q = query(swipesRef, where('category', '==', category));
+  const querySnapshot = await getDocs(q);
+  
+  // Also check old swipes without category field (for backward compatibility with trails)
+  if (category === 'hikes') {
+    const allSwipes = collection(db, 'userSwipes', userId, 'swipes');
+    const allSnapshot = await getDocs(allSwipes);
+    return allSnapshot.docs.map(doc => doc.id);
+  }
+  
+  return querySnapshot.docs.map(doc => doc.id);
+};
+
+/**
+ * Record a user's swipe on an item (category-aware)
+ */
+export const recordCategorySwipe = async (
+  userId: string,
+  itemId: string,
+  category: CategoryType,
+  liked: boolean
+): Promise<void> => {
+  const swipeRef = doc(db, 'userSwipes', userId, 'swipes', itemId);
+  
+  console.log('💾 Recording category swipe:', { userId, itemId, category, liked });
+  
+  await setDoc(swipeRef, {
+    userId,
+    itemId,
+    trailId: itemId, // Keep for backward compatibility
+    category,
+    liked,
+    swipedAt: Timestamp.now(),
+  });
+
+  console.log('✅ Category swipe recorded successfully');
+
+  // Check for matches if the user liked the item
+  if (liked) {
+    console.log('❤️ User liked item, checking for matches...');
+    await checkForCategoryMatches(userId, itemId, category);
+  }
+};
+
+/**
+ * Check for matches in a specific category
+ */
+const checkForCategoryMatches = async (
+  userId: string,
+  itemId: string,
+  category: CategoryType
+): Promise<void> => {
+  console.log('🔍 Checking for category matches:', { userId, itemId, category });
+  
+  // Get all users from the users collection
+  const usersRef = collection(db, 'users');
+  const usersSnapshot = await getDocs(usersRef);
+  
+  console.log('📊 Total users in database:', usersSnapshot.docs.length);
+  
+  const usersWhoLiked: string[] = [];
+  
+  // Check each user to see if they liked this item
+  for (const userDoc of usersSnapshot.docs) {
+    const swipeRef = doc(db, 'userSwipes', userDoc.id, 'swipes', itemId);
+    const swipeSnap = await getDoc(swipeRef);
+    
+    if (swipeSnap.exists() && swipeSnap.data().liked) {
+      usersWhoLiked.push(userDoc.id);
+      console.log('✅ User liked this item:', userDoc.id);
+    }
+  }
+
+  console.log('💚 Users who liked item:', usersWhoLiked.length);
+
+  // Create matches for all pairs of users who liked this item
+  if (usersWhoLiked.length >= 2) {
+    console.log('🎉 Creating matches!');
+    for (let i = 0; i < usersWhoLiked.length; i++) {
+      for (let j = i + 1; j < usersWhoLiked.length; j++) {
+        const user1 = usersWhoLiked[i];
+        const user2 = usersWhoLiked[j];
+        
+        // Create a consistent match ID
+        const matchId = [user1, user2].sort().join('_') + '_' + itemId;
+        
+        // Check if match already exists
+        const matchRef = doc(db, 'matches', matchId);
+        const matchSnap = await getDoc(matchRef);
+        
+        if (!matchSnap.exists()) {
+          // Get user profiles
+          const user1Profile = await getUserProfile(user1);
+          const user2Profile = await getUserProfile(user2);
+          
+          await setDoc(matchRef, {
+            itemId,
+            trailId: itemId, // Keep for backward compatibility
+            category,
+            userIds: [user1, user2],
+            userProfiles: [
+              {
+                uid: user1,
+                username: user1Profile?.username || '',
+                displayName: user1Profile?.displayName || ''
+              },
+              {
+                uid: user2,
+                username: user2Profile?.username || '',
+                displayName: user2Profile?.displayName || ''
+              }
+            ],
+            matchedAt: Timestamp.now(),
+          });
+          console.log('✨ Match created!', { matchId, user1, user2, itemId, category });
+        } else {
+          console.log('ℹ️ Match already exists:', matchId);
+        }
+      }
+    }
+  }
+};
+
+/**
+ * Create a new user-contributed item
+ */
+export const createUserContribution = async (
+  category: CategoryType,
+  name: string,
+  image: string,
+  description: string,
+  categoryData: HikeData | MovieData | TVData | RestaurantData
+): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to contribute');
+  }
+
+  const userId = auth.currentUser.uid;
+  const userProfile = await getUserProfile(userId);
+
+  // Determine collection name based on category
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  
+  // Create the item
+  const itemRef = doc(collection(db, collectionName));
+  const itemId = itemRef.id;
+
+  const newItem: SwipeItem = {
+    id: itemId,
+    category,
+    name: name.trim(),
+    image: image.trim(),
+    description: description.trim(),
+    categoryData,
+    createdBy: userId,  // Track who created this item
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  };
+
+  await setDoc(itemRef, newItem);
+
+  // Track contribution
+  const contributionRef = doc(collection(db, 'userContributions'));
+  await setDoc(contributionRef, {
+    id: contributionRef.id,
+    userId,
+    username: userProfile?.username || 'anonymous',
+    displayName: userProfile?.displayName || 'Anonymous User',
+    category,
+    itemId,
+    itemName: name,
+    status: 'active',
+    contributedAt: Timestamp.now(),
+    upvotes: 0,
+    downvotes: 0,
+  });
+
+  console.log('✨ User contribution created!', { itemId, category, userId });
+  return itemId;
+};
+
+/**
+ * Get all contributions by a specific user with full item data
+ */
+export const getUserContributions = async (userId: string): Promise<SwipeItem[]> => {
+  try {
+    const contributions: SwipeItem[] = [];
+    
+    // Query userContributions collection for this user
+    // Simple query with only where clause - no orderBy to avoid composite index
+    const contributionsRef = collection(db, 'userContributions');
+    const q = query(
+      contributionsRef,
+      where('userId', '==', userId)
+    );
+    
+    const contributionsSnapshot = await getDocs(q);
+    
+    // Collect all contributions with their timestamps for sorting
+    const contributionsWithTime: Array<{ item: SwipeItem; contributedAt: any }> = [];
+    
+    // Fetch each actual item (only active contributions)
+    for (const contributionDoc of contributionsSnapshot.docs) {
+      const contribution = contributionDoc.data();
+      
+      // Filter by status in memory
+      if (contribution.status !== 'active') {
+        continue;
+      }
+      
+      const { category, itemId, contributedAt } = contribution;
+      
+      // Determine collection name
+      const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+      
+      // Fetch the actual item
+      const itemRef = doc(db, collectionName, itemId);
+      const itemDoc = await getDoc(itemRef);
+      
+      if (itemDoc.exists()) {
+        contributionsWithTime.push({
+          item: itemDoc.data() as SwipeItem,
+          contributedAt
+        });
+      }
+    }
+    
+    // Sort by contributedAt in memory (newest first)
+    contributionsWithTime.sort((a, b) => {
+      const timeA = a.contributedAt?.toMillis?.() || 0;
+      const timeB = b.contributedAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+    
+    // Extract just the items
+    return contributionsWithTime.map(c => c.item);
+    
+    return contributions;
+  } catch (error) {
+    console.error('Error fetching user contributions:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a user contribution
+ */
+export const updateUserContribution = async (
+  itemId: string,
+  category: CategoryType,
+  updates: Partial<SwipeItem>
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to update items');
+  }
+
+  const userId = auth.currentUser.uid;
+  
+  // Verify ownership by checking userContributions collection
+  const contributionsRef = collection(db, 'userContributions');
+  const q = query(
+    contributionsRef,
+    where('userId', '==', userId),
+    where('itemId', '==', itemId)
+  );
+  
+  const contributionsSnapshot = await getDocs(q);
+  
+  if (contributionsSnapshot.empty) {
+    throw new Error('You can only edit your own contributions');
+  }
+  
+  // Determine collection name
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  const itemRef = doc(db, collectionName, itemId);
+  
+  // Check if item exists
+  const itemDoc = await getDoc(itemRef);
+  if (!itemDoc.exists()) {
+    throw new Error('Item not found');
+  }
+  
+  // For items with createdBy field, verify it matches (extra security for new items)
+  const itemData = itemDoc.data() as SwipeItem;
+  if (itemData.createdBy && itemData.createdBy !== userId) {
+    throw new Error('You can only edit your own contributions');
+  }
+  
+  // Update the item
+  await updateDoc(itemRef, {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  });
+  
+  console.log('✅ Contribution updated!', { itemId, category });
+};
+
+/**
+ * Delete a user contribution (soft delete)
+ */
+export const deleteUserContribution = async (
+  itemId: string,
+  category: CategoryType
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in to delete items');
+  }
+
+  const userId = auth.currentUser.uid;
+  
+  // Verify ownership by checking userContributions collection
+  const contributionsRef = collection(db, 'userContributions');
+  const q = query(
+    contributionsRef,
+    where('userId', '==', userId),
+    where('itemId', '==', itemId)
+  );
+  
+  const contributionsSnapshot = await getDocs(q);
+  
+  if (contributionsSnapshot.empty) {
+    throw new Error('You can only delete your own contributions');
+  }
+  
+  // Determine collection name
+  const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
+  const itemRef = doc(db, collectionName, itemId);
+  
+  // Check if item exists
+  const itemDoc = await getDoc(itemRef);
+  if (!itemDoc.exists()) {
+    throw new Error('Item not found');
+  }
+  
+  // For items with createdBy field, verify it matches (extra security for new items)
+  const itemData = itemDoc.data() as SwipeItem;
+  if (itemData.createdBy && itemData.createdBy !== userId) {
+    throw new Error('You can only delete your own contributions');
+  }
+  
+  // Delete the item from the collection
+  await deleteDoc(itemRef);
+  
+  // Update userContributions status to deleted
+  for (const contributionDoc of contributionsSnapshot.docs) {
+    await updateDoc(doc(db, 'userContributions', contributionDoc.id), {
+      status: 'deleted',
+      deletedAt: Timestamp.now(),
+    });
+  }
+  
+  console.log('🗑️ Contribution deleted!', { itemId, category });
 };

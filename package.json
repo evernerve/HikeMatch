@@ -1,16 +1,21 @@
 {
-  "name": "hikematch",
+  "name": "swipematch",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:movies": "tsx scripts/seedMovies.ts",
+    "seed:tv": "tsx scripts/seedTVShows.ts",
+    "seed:restaurants": "tsx scripts/seedRestaurants.ts",
+    "seed:all": "tsx scripts/seedAll.ts"
   },
   "dependencies": {
     "@react-spring/web": "^9.7.5",
+    "dotenv": "^17.2.3",
     "firebase": "^10.14.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

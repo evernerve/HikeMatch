@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <!-- Modern gradient inspired by Linear/Stripe -->
+    <linearGradient id="modernGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Subtle shadow for depth -->
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.2"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background with subtle rounding -->
+  <rect width="100" height="100" rx="22" fill="url(#modernGrad)"/>
+  
+  <!-- Modern "Match" icon: Two overlapping cards/rectangles creating a Venn diagram effect -->
+  <g filter="url(#softShadow)">
+    <!-- Left card (representing user/category 1) -->
+    <rect x="20" y="28" width="32" height="44" rx="6" fill="white" opacity="0.95"/>
+    
+    <!-- Right card (representing user/category 2) -->
+    <rect x="48" y="28" width="32" height="44" rx="6" fill="white" opacity="0.95"/>
+    
+    <!-- Intersection highlight (the "match") - heart or spark in the overlap -->
+    <circle cx="50" cy="50" r="10" fill="#10b981"/>
+    
+    <!-- Small checkmark or spark icon in center -->
+    <path d="M 46 50 L 49 53 L 55 47" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Decorative dots representing variety/categories -->
+  <g fill="white" opacity="0.3">
+    <circle cx="25" cy="85" r="2"/>
+    <circle cx="50" cy="85" r="2"/>
+    <circle cx="75" cy="85" r="2"/>
+  </g>
+</svg>

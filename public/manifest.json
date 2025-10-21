@@ -1,7 +1,7 @@
 {
-  "name": "HikeMatch",
-  "short_name": "HikeMatch",
-  "description": "Find hiking trails with friends through swiping",
+  "name": "SwipeMatch - Swipe, Match, Experience Together",
+  "short_name": "SwipeMatch",
+  "description": "Swipe, Match, Experience Together - Discover hikes, movies, TV shows, and restaurants with friends",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

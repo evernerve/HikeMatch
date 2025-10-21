@@ -3,7 +3,7 @@ import { getFirestore, collection, getDocs, doc, deleteDoc } from 'firebase/fire
 
 // Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyBdABsUO9CvnuaLyYvMTLpGkiKLKwB9dGQ",
+  apiKey: "",
   authDomain: "hikematch42.firebaseapp.com",
   projectId: "hikematch42",
   storageBucket: "hikematch42.firebasestorage.app",
