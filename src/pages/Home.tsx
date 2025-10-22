@@ -29,6 +29,7 @@ export default function Home() {
     try {
       if (!auth.currentUser) return;
       const unswipedItems = await getUnswipedCategoryItems(auth.currentUser.uid, activeCategory);
+      console.log(`📦 Loaded ${unswipedItems.length} items for ${activeCategory}:`, unswipedItems);
       setItems(unswipedItems);
       setCurrentIndex(unswipedItems.length - 1);
     } catch (error) {

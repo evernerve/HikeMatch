@@ -853,6 +853,78 @@ export const createUserContribution = async (
   const userId = auth.currentUser.uid;
   const userProfile = await getUserProfile(userId);
 
+  // Validate and normalize categoryData based on category
+  let validatedCategoryData: any = { ...categoryData };
+
+  if (category === 'restaurants') {
+    // Ensure required fields for restaurants
+    validatedCategoryData = {
+      restaurantName: validatedCategoryData.restaurantName || name,
+      cuisine: validatedCategoryData.cuisine || ['International'],
+      priceRange: validatedCategoryData.priceRange || '€€',
+      location: validatedCategoryData.location || 'Munich',
+      address: validatedCategoryData.address || 'Address not provided',
+      rating: validatedCategoryData.rating || 4.0,
+      reviewCount: validatedCategoryData.reviewCount || 0,
+      phone: validatedCategoryData.phone || '',
+      website: validatedCategoryData.website || '',
+      hours: validatedCategoryData.hours || 'Hours not provided',
+      specialties: validatedCategoryData.specialties || [],
+      dietaryOptions: validatedCategoryData.dietaryOptions || [],
+      ambiance: validatedCategoryData.ambiance || ['Casual'],
+      ...validatedCategoryData // Preserve any additional fields
+    };
+  } else if (category === 'movies') {
+    // Ensure required fields for movies
+    validatedCategoryData = {
+      title: validatedCategoryData.title || name,
+      year: validatedCategoryData.year || new Date().getFullYear(),
+      runtime: validatedCategoryData.runtime || 120,
+      genres: validatedCategoryData.genres || ['Drama'],
+      director: validatedCategoryData.director || 'Unknown',
+      cast: validatedCategoryData.cast || [],
+      rating: validatedCategoryData.rating || 7.0,
+      voteCount: validatedCategoryData.voteCount || 0,
+      plot: validatedCategoryData.plot || description,
+      language: validatedCategoryData.language || 'English',
+      country: validatedCategoryData.country || 'USA',
+      tmdbId: validatedCategoryData.tmdbId || 0,
+      ...validatedCategoryData
+    };
+  } else if (category === 'tv') {
+    // Ensure required fields for TV shows
+    validatedCategoryData = {
+      title: validatedCategoryData.title || name,
+      startYear: validatedCategoryData.startYear || new Date().getFullYear(),
+      status: validatedCategoryData.status || 'ongoing',
+      seasons: validatedCategoryData.seasons || 1,
+      episodes: validatedCategoryData.episodes || 10,
+      genres: validatedCategoryData.genres || ['Drama'],
+      creator: validatedCategoryData.creator || 'Unknown',
+      cast: validatedCategoryData.cast || [],
+      rating: validatedCategoryData.rating || 7.0,
+      voteCount: validatedCategoryData.voteCount || 0,
+      plot: validatedCategoryData.plot || description,
+      network: validatedCategoryData.network || 'Unknown',
+      tmdbId: validatedCategoryData.tmdbId || 0,
+      ...validatedCategoryData
+    };
+  } else if (category === 'hikes') {
+    // Ensure required fields for hikes
+    validatedCategoryData = {
+      lengthKm: validatedCategoryData.lengthKm || 5,
+      durationHours: validatedCategoryData.durationHours || 2,
+      difficulty: validatedCategoryData.difficulty || 'moderate',
+      elevationGainM: validatedCategoryData.elevationGainM || 100,
+      location: validatedCategoryData.location || 'Munich Area',
+      distanceFromMunichKm: validatedCategoryData.distanceFromMunichKm || 30,
+      publicTransportTime: validatedCategoryData.publicTransportTime || 60,
+      scenery: validatedCategoryData.scenery || 'Nature',
+      pathType: validatedCategoryData.pathType || 'Trail',
+      ...validatedCategoryData
+    };
+  }
+
   // Determine collection name based on category
   const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
   
@@ -866,11 +938,19 @@ export const createUserContribution = async (
     name: name.trim(),
     image: image.trim(),
     description: description.trim(),
-    categoryData,
+    categoryData: validatedCategoryData,
     createdBy: userId,  // Track who created this item
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
+
+  console.log('✅ Creating item with validated data:', {
+    category,
+    name,
+    hasRequiredFields: category === 'restaurants' 
+      ? 'cuisine' in validatedCategoryData && 'priceRange' in validatedCategoryData 
+      : true
+  });
 
   await setDoc(itemRef, newItem);
 
