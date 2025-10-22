@@ -11,11 +11,39 @@ export default function CategoryCard({ item }: CategoryCardProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Safety check: if categoryData is missing or empty
+  if (!item.categoryData || Object.keys(item.categoryData).length === 0) {
+    console.warn('⚠️ Empty or missing categoryData for item:', item);
+    
+    // Show a fallback card with basic info
+    return (
+      <div className="w-full h-[500px] sm:h-[600px] rounded-2xl shadow-2xl bg-gradient-to-br from-yellow-50 to-orange-50 flex flex-col justify-end overflow-hidden">
+        <img
+          src={item.image}
+          alt={item.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="relative p-6 text-white">
+          <div className="bg-yellow-500/80 backdrop-blur-sm rounded-full px-3 py-1 inline-block mb-3">
+            <span className="text-xs font-semibold">⚠️ Incomplete Data</span>
+          </div>
+          <h2 className="text-3xl font-bold mb-2">{item.name}</h2>
+          <p className="text-sm text-gray-200 mb-4">{item.description}</p>
+          <p className="text-xs text-gray-300 italic">
+            This item is missing detailed information. It may have been added by a user and is pending review.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Type-safe access to category-specific data
-  const hikeData = isHikeData(item.categoryData) ? item.categoryData : null;
-  const movieData = isMovieData(item.categoryData) ? item.categoryData : null;
-  const tvData = isTVData(item.categoryData) ? item.categoryData : null;
-  const restaurantData = isRestaurantData(item.categoryData) ? item.categoryData : null;
+  const hikeData = item.categoryData && isHikeData(item.categoryData) ? item.categoryData : null;
+  const movieData = item.categoryData && isMovieData(item.categoryData) ? item.categoryData : null;
+  const tvData = item.categoryData && isTVData(item.categoryData) ? item.categoryData : null;
+  const restaurantData = item.categoryData && isRestaurantData(item.categoryData) ? item.categoryData : null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -132,23 +160,23 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                 <div className="flex flex-wrap gap-2 mb-3">
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">📅</span>
-                    <span className="text-xs font-medium text-gray-800">{movieData.year}</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.year || 2024}</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">⏱️</span>
-                    <span className="text-xs font-medium text-gray-800">{movieData.runtime} min</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.runtime || 120} min</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">⭐</span>
-                    <span className="text-xs font-medium text-gray-800">{movieData.rating.toFixed(1)}/10</span>
+                    <span className="text-xs font-medium text-gray-800">{(movieData.rating || 7.0).toFixed(1)}/10</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">🎬</span>
-                    <span className="text-xs font-medium text-gray-800">{movieData.director}</span>
+                    <span className="text-xs font-medium text-gray-800">{movieData.director || 'Unknown'}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {movieData.genres.slice(0, 3).map((genre) => (
+                  {(movieData.genres || ['Drama']).slice(0, 3).map((genre) => (
                     <span key={genre} className="px-2.5 py-1 bg-red-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
                       {genre}
                     </span>
@@ -166,20 +194,20 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                     <span className="text-xs font-medium text-gray-800">{tvData.startYear}{tvData.endYear ? `-${tvData.endYear}` : '+'}</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                    <span className="text-base">�</span>
-                    <span className="text-xs font-medium text-gray-800">{tvData.seasons} seasons</span>
+                    <span className="text-base">📺</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.seasons || 1} seasons</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">⭐</span>
-                    <span className="text-xs font-medium text-gray-800">{tvData.rating.toFixed(1)}/10</span>
+                    <span className="text-xs font-medium text-gray-800">{(tvData.rating || 7.0).toFixed(1)}/10</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">🎭</span>
-                    <span className="text-xs font-medium text-gray-800">{tvData.network}</span>
+                    <span className="text-xs font-medium text-gray-800">{tvData.network || 'Network'}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {tvData.genres.slice(0, 3).map((genre) => (
+                  {(tvData.genres || ['Drama']).slice(0, 3).map((genre) => (
                     <span key={genre} className="px-2.5 py-1 bg-purple-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
                       {genre}
                     </span>
@@ -194,19 +222,19 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                 <div className="flex flex-wrap gap-2 mb-3">
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">💰</span>
-                    <span className="text-xs font-medium text-gray-800">{restaurantData.priceRange}</span>
+                    <span className="text-xs font-medium text-gray-800">{restaurantData.priceRange || '€€'}</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">⭐</span>
-                    <span className="text-xs font-medium text-gray-800">{restaurantData.rating.toFixed(1)}/5</span>
+                    <span className="text-xs font-medium text-gray-800">{(restaurantData.rating || 4.0).toFixed(1)}/5</span>
                   </div>
                   <div className="bg-white/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
                     <span className="text-base">📍</span>
-                    <span className="text-xs font-medium text-gray-800">{restaurantData.location}</span>
+                    <span className="text-xs font-medium text-gray-800">{restaurantData.location || 'Munich'}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {restaurantData.cuisine.slice(0, 3).map((cuisine) => (
+                  {(restaurantData.cuisine || ['International']).slice(0, 3).map((cuisine) => (
                     <span key={cuisine} className="px-2.5 py-1 bg-orange-500/60 backdrop-blur-sm rounded-full text-xs font-medium text-white shadow-sm">
                       {cuisine}
                     </span>
@@ -569,7 +597,7 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                       <h3 className="text-lg font-semibold">Specialties</h3>
                     </div>
                     <ul className="space-y-2">
-                      {restaurantData.specialties.map((specialty, index) => (
+                      {(restaurantData.specialties || []).map((specialty, index) => (
                         <li key={index} className="flex items-start gap-2 text-sm text-white/90">
                           <span className="text-primary-200 mt-0.5">•</span>
                           <span>{specialty}</span>
@@ -584,7 +612,7 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                       <h3 className="text-lg font-semibold">Dietary Options</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {restaurantData.dietaryOptions.map((option) => (
+                      {(restaurantData.dietaryOptions || []).map((option) => (
                         <span key={option} className="px-3 py-1 bg-green-500/30 rounded-full text-xs font-medium">
                           {option}
                         </span>
@@ -598,7 +626,7 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                       <h3 className="text-lg font-semibold">Ambiance</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {restaurantData.ambiance.map((vibe) => (
+                      {(restaurantData.ambiance || []).map((vibe) => (
                         <span key={vibe} className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
                           {vibe}
                         </span>
@@ -610,15 +638,15 @@ export default function CategoryCard({ item }: CategoryCardProps) {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs text-white/60 mb-1">Location</p>
-                        <p className="text-sm font-semibold">{restaurantData.location}</p>
+                        <p className="text-sm font-semibold">{restaurantData.location || 'Munich'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-white/60 mb-1">Price Range</p>
-                        <p className="text-sm font-semibold">{restaurantData.priceRange}</p>
+                        <p className="text-sm font-semibold">{restaurantData.priceRange || '€€'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-white/60 mb-1">Rating</p>
-                        <p className="text-sm font-semibold">⭐ {restaurantData.rating}/5</p>
+                        <p className="text-sm font-semibold">⭐ {(restaurantData.rating || 4.0).toFixed(1)}/5</p>
                       </div>
                       {restaurantData.phone && (
                         <div>

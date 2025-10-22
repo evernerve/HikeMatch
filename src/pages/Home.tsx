@@ -29,6 +29,7 @@ export default function Home() {
     try {
       if (!auth.currentUser) return;
       const unswipedItems = await getUnswipedCategoryItems(auth.currentUser.uid, activeCategory);
+      console.log(`📦 Loaded ${unswipedItems.length} items for ${activeCategory}:`, unswipedItems);
       setItems(unswipedItems);
       setCurrentIndex(unswipedItems.length - 1);
     } catch (error) {
@@ -170,7 +171,7 @@ export default function Home() {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <span className="text-4xl mb-4 block">👍</span>
-                <p className="text-gray-600 font-medium">No more trails!</p>
+                <p className="text-gray-600 font-medium">No more items!</p>
               </div>
             </div>
           )}

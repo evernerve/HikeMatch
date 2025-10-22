@@ -134,19 +134,19 @@ export interface SwipeItem {
 
 // Type Guards for categoryData
 export function isHikeData(data: any): data is HikeData {
-  return 'lengthKm' in data && 'difficulty' in data;
+  return data && typeof data === 'object' && 'lengthKm' in data && 'difficulty' in data;
 }
 
 export function isMovieData(data: any): data is MovieData {
-  return 'runtime' in data && 'director' in data && 'tmdbId' in data;
+  return data && typeof data === 'object' && 'runtime' in data && 'director' in data && 'tmdbId' in data;
 }
 
 export function isTVData(data: any): data is TVData {
-  return 'seasons' in data && 'episodes' in data && 'tmdbId' in data;
+  return data && typeof data === 'object' && 'seasons' in data && 'episodes' in data && 'tmdbId' in data;
 }
 
 export function isRestaurantData(data: any): data is RestaurantData {
-  return 'cuisine' in data && 'priceRange' in data && 'address' in data;
+  return data && typeof data === 'object' && 'cuisine' in data && 'priceRange' in data && 'address' in data;
 }
 
 // Helper to get category from item

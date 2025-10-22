@@ -85,6 +85,19 @@ export interface Connection {
   connectedAt: Timestamp;
 }
 
+export interface ResetRequest {
+  id: string;
+  fromUserId: string;
+  fromUsername: string;
+  fromDisplayName: string;
+  toUserId: string;
+  toUsername: string;
+  toDisplayName: string;
+  category: CategoryType;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Timestamp;
+}
+
 // Authentication Functions
 
 /**
@@ -459,8 +472,9 @@ export const getUserByUsername = async (username: string): Promise<UserProfile |
 
 /**
  * Send a connection request to another user
+ * Returns 'sent' if new request created, 'connected' if auto-accepted existing request
  */
-export const sendConnectionRequest = async (toUsername: string): Promise<void> => {
+export const sendConnectionRequest = async (toUsername: string): Promise<'sent' | 'connected'> => {
   if (!auth.currentUser) throw new Error('Not authenticated');
   
   const fromUser = await getUserProfile(auth.currentUser.uid);
@@ -473,24 +487,40 @@ export const sendConnectionRequest = async (toUsername: string): Promise<void> =
     throw new Error('Cannot send request to yourself');
   }
   
-  // Check if request already exists
+  // Check if already connected
+  const isConnected = await checkConnection(toUser.uid);
+  if (isConnected) {
+    throw new Error('Already connected with this user');
+  }
+  
+  // Check if there's already a pending request FROM them TO us
   const requestsRef = collection(db, 'connectionRequests');
-  const existingRequest = query(
+  const reverseRequest = query(
+    requestsRef,
+    where('fromUserId', '==', toUser.uid),
+    where('toUserId', '==', fromUser.uid),
+    where('status', '==', 'pending')
+  );
+  const reverseSnapshot = await getDocs(reverseRequest);
+  
+  if (!reverseSnapshot.empty) {
+    // They already sent us a request! Auto-accept it instead of creating a new one
+    const existingRequestId = reverseSnapshot.docs[0].id;
+    await acceptConnectionRequest(existingRequestId);
+    return 'connected';
+  }
+  
+  // Check if we already sent them a request
+  const forwardRequest = query(
     requestsRef,
     where('fromUserId', '==', fromUser.uid),
     where('toUserId', '==', toUser.uid),
     where('status', '==', 'pending')
   );
-  const existingSnapshot = await getDocs(existingRequest);
+  const forwardSnapshot = await getDocs(forwardRequest);
   
-  if (!existingSnapshot.empty) {
+  if (!forwardSnapshot.empty) {
     throw new Error('Connection request already sent');
-  }
-  
-  // Check if already connected
-  const isConnected = await checkConnection(toUser.uid);
-  if (isConnected) {
-    throw new Error('Already connected with this user');
   }
   
   // Create the request
@@ -505,6 +535,8 @@ export const sendConnectionRequest = async (toUsername: string): Promise<void> =
     status: 'pending',
     createdAt: Timestamp.now()
   });
+  
+  return 'sent';
 };
 
 /**
@@ -556,16 +588,37 @@ export const acceptConnectionRequest = async (requestId: string): Promise<void> 
   
   const request = requestSnap.data() as ConnectionRequest;
   
-  // Update request status
-  await setDoc(requestRef, { ...request, status: 'accepted' });
+  if (request.status !== 'pending') {
+    throw new Error('Request has already been processed');
+  }
   
-  // Create connection for both users
+  // Check if connection already exists (prevents duplicates)
+  const existingConnection = await checkConnection(
+    request.fromUserId === auth.currentUser.uid ? request.toUserId : request.fromUserId
+  );
+  
+  if (existingConnection) {
+    // Connection already exists, just update request status
+    await updateDoc(requestRef, { status: 'accepted' });
+    return;
+  }
+  
+  // Update request status
+  await updateDoc(requestRef, { status: 'accepted' });
+  
+  // Get display names
+  const [fromUserProfile, toUserProfile] = await Promise.all([
+    getUserProfile(request.fromUserId),
+    getUserProfile(request.toUserId)
+  ]);
+  
+  // Create bidirectional connections
   const connection1Ref = doc(collection(db, 'connections'));
   await setDoc(connection1Ref, {
     userId: request.fromUserId,
     connectedUserId: request.toUserId,
     connectedUsername: request.toUsername,
-    connectedDisplayName: (await getUserProfile(request.toUserId))?.displayName || '',
+    connectedDisplayName: toUserProfile?.displayName || '',
     connectedAt: Timestamp.now()
   });
   
@@ -574,9 +627,27 @@ export const acceptConnectionRequest = async (requestId: string): Promise<void> 
     userId: request.toUserId,
     connectedUserId: request.fromUserId,
     connectedUsername: request.fromUsername,
-    connectedDisplayName: request.fromDisplayName,
+    connectedDisplayName: fromUserProfile?.displayName || request.fromDisplayName,
     connectedAt: Timestamp.now()
   });
+  
+  // Check for and handle reciprocal pending request
+  const requestsRef = collection(db, 'connectionRequests');
+  const reciprocalQuery = query(
+    requestsRef,
+    where('fromUserId', '==', request.toUserId),
+    where('toUserId', '==', request.fromUserId),
+    where('status', '==', 'pending')
+  );
+  
+  const reciprocalSnapshot = await getDocs(reciprocalQuery);
+  
+  // If there's a reciprocal request, mark it as accepted too
+  if (!reciprocalSnapshot.empty) {
+    for (const doc of reciprocalSnapshot.docs) {
+      await updateDoc(doc.ref, { status: 'accepted' });
+    }
+  }
 };
 
 /**
@@ -702,7 +773,40 @@ export const getUnswipedCategoryItems = async (
   const allItems = await getCategoryItems(category);
   const swipedItemIds = await getUserCategorySwipes(userId, category);
   
-  return allItems.filter(item => !swipedItemIds.includes(item.id));
+  // Get user's connections
+  const connections = await getConnections();
+  const connectedUserIds = connections.map(conn => conn.connectedUserId);
+  
+  // Filter items based on:
+  // 1. Not already swiped
+  // 2. If item has createdBy (user contribution):
+  //    - Show if created by current user OR
+  //    - Show if created by a connected user
+  // 3. If no createdBy (seed data), always show
+  return allItems.filter(item => {
+    // Skip if already swiped
+    if (swipedItemIds.includes(item.id)) {
+      return false;
+    }
+    
+    // If no createdBy, it's seed data - always show
+    if (!item.createdBy) {
+      return true;
+    }
+    
+    // Show user's own contributions
+    if (item.createdBy === userId) {
+      return true;
+    }
+    
+    // Show contributions from connected users
+    if (connectedUserIds.includes(item.createdBy)) {
+      return true;
+    }
+    
+    // Hide contributions from non-connected users
+    return false;
+  });
 };
 
 /**
@@ -853,6 +957,78 @@ export const createUserContribution = async (
   const userId = auth.currentUser.uid;
   const userProfile = await getUserProfile(userId);
 
+  // Validate and normalize categoryData based on category
+  let validatedCategoryData: any = { ...categoryData };
+
+  if (category === 'restaurants') {
+    // Ensure required fields for restaurants
+    validatedCategoryData = {
+      restaurantName: validatedCategoryData.restaurantName || name,
+      cuisine: validatedCategoryData.cuisine || ['International'],
+      priceRange: validatedCategoryData.priceRange || '€€',
+      location: validatedCategoryData.location || 'Munich',
+      address: validatedCategoryData.address || 'Address not provided',
+      rating: validatedCategoryData.rating || 4.0,
+      reviewCount: validatedCategoryData.reviewCount || 0,
+      phone: validatedCategoryData.phone || '',
+      website: validatedCategoryData.website || '',
+      hours: validatedCategoryData.hours || 'Hours not provided',
+      specialties: validatedCategoryData.specialties || [],
+      dietaryOptions: validatedCategoryData.dietaryOptions || [],
+      ambiance: validatedCategoryData.ambiance || ['Casual'],
+      ...validatedCategoryData // Preserve any additional fields
+    };
+  } else if (category === 'movies') {
+    // Ensure required fields for movies
+    validatedCategoryData = {
+      title: validatedCategoryData.title || name,
+      year: validatedCategoryData.year || new Date().getFullYear(),
+      runtime: validatedCategoryData.runtime || 120,
+      genres: validatedCategoryData.genres || ['Drama'],
+      director: validatedCategoryData.director || 'Unknown',
+      cast: validatedCategoryData.cast || [],
+      rating: validatedCategoryData.rating || 7.0,
+      voteCount: validatedCategoryData.voteCount || 0,
+      plot: validatedCategoryData.plot || description,
+      language: validatedCategoryData.language || 'English',
+      country: validatedCategoryData.country || 'USA',
+      tmdbId: validatedCategoryData.tmdbId || 0,
+      ...validatedCategoryData
+    };
+  } else if (category === 'tv') {
+    // Ensure required fields for TV shows
+    validatedCategoryData = {
+      title: validatedCategoryData.title || name,
+      startYear: validatedCategoryData.startYear || new Date().getFullYear(),
+      status: validatedCategoryData.status || 'ongoing',
+      seasons: validatedCategoryData.seasons || 1,
+      episodes: validatedCategoryData.episodes || 10,
+      genres: validatedCategoryData.genres || ['Drama'],
+      creator: validatedCategoryData.creator || 'Unknown',
+      cast: validatedCategoryData.cast || [],
+      rating: validatedCategoryData.rating || 7.0,
+      voteCount: validatedCategoryData.voteCount || 0,
+      plot: validatedCategoryData.plot || description,
+      network: validatedCategoryData.network || 'Unknown',
+      tmdbId: validatedCategoryData.tmdbId || 0,
+      ...validatedCategoryData
+    };
+  } else if (category === 'hikes') {
+    // Ensure required fields for hikes
+    validatedCategoryData = {
+      lengthKm: validatedCategoryData.lengthKm || 5,
+      durationHours: validatedCategoryData.durationHours || 2,
+      difficulty: validatedCategoryData.difficulty || 'moderate',
+      elevationGainM: validatedCategoryData.elevationGainM || 100,
+      location: validatedCategoryData.location || 'Munich Area',
+      distanceFromMunichKm: validatedCategoryData.distanceFromMunichKm || 30,
+      publicTransportTime: validatedCategoryData.publicTransportTime || 60,
+      scenery: validatedCategoryData.scenery || 'Nature',
+      pathType: validatedCategoryData.pathType || 'Trail',
+      ...validatedCategoryData
+    };
+  }
+
   // Determine collection name based on category
   const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
   
@@ -866,11 +1042,19 @@ export const createUserContribution = async (
     name: name.trim(),
     image: image.trim(),
     description: description.trim(),
-    categoryData,
+    categoryData: validatedCategoryData,
     createdBy: userId,  // Track who created this item
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
+
+  console.log('✅ Creating item with validated data:', {
+    category,
+    name,
+    hasRequiredFields: category === 'restaurants' 
+      ? 'cuisine' in validatedCategoryData && 'priceRange' in validatedCategoryData 
+      : true
+  });
 
   await setDoc(itemRef, newItem);
 
@@ -1066,3 +1250,252 @@ export const deleteUserContribution = async (
   
   console.log('🗑️ Contribution deleted!', { itemId, category });
 };
+
+// ============================================================================
+// RESET MATCHES FUNCTIONS
+// ============================================================================
+
+/**
+ * Send a reset request to a connected friend for a specific category
+ */
+export const sendResetRequest = async (
+  toUserId: string,
+  category: CategoryType
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const fromUserId = auth.currentUser.uid;
+
+  // Check if users are connected
+  const isConnected = await checkConnection(toUserId);
+  if (!isConnected) {
+    throw new Error('You must be connected with this user first');
+  }
+
+  // Get both user profiles
+  const [fromProfile, toProfile] = await Promise.all([
+    getUserProfile(fromUserId),
+    getUserProfile(toUserId)
+  ]);
+
+  if (!fromProfile || !toProfile) {
+    throw new Error('User profile not found');
+  }
+
+  // Check if there's already a pending request between these users for this category
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const existingQuery = query(
+    resetRequestsRef,
+    where('fromUserId', 'in', [fromUserId, toUserId]),
+    where('toUserId', 'in', [fromUserId, toUserId]),
+    where('category', '==', category),
+    where('status', '==', 'pending')
+  );
+  
+  const existingSnapshot = await getDocs(existingQuery);
+  
+  if (!existingSnapshot.empty) {
+    throw new Error('There is already a pending reset request for this category');
+  }
+
+  // Create the reset request
+  const resetRequestRef = doc(collection(db, 'resetRequests'));
+  await setDoc(resetRequestRef, {
+    fromUserId,
+    fromUsername: fromProfile.username,
+    fromDisplayName: fromProfile.displayName,
+    toUserId,
+    toUsername: toProfile.username,
+    toDisplayName: toProfile.displayName,
+    category,
+    status: 'pending',
+    createdAt: Timestamp.now(),
+  });
+
+  console.log('✅ Reset request sent!', { fromUserId, toUserId, category });
+};
+
+/**
+ * Get reset requests sent by current user
+ */
+export const getSentResetRequests = async (): Promise<ResetRequest[]> => {
+  if (!auth.currentUser) return [];
+
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const q = query(
+    resetRequestsRef,
+    where('fromUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as ResetRequest));
+};
+
+/**
+ * Get reset requests received by current user
+ */
+export const getReceivedResetRequests = async (): Promise<ResetRequest[]> => {
+  if (!auth.currentUser) return [];
+
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const q = query(
+    resetRequestsRef,
+    where('toUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as ResetRequest));
+};
+
+/**
+ * Accept a reset request and clear mutual matches for that category
+ */
+export const acceptResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.toUserId !== auth.currentUser.uid) {
+    throw new Error('You can only accept requests sent to you');
+  }
+
+  if (request.status !== 'pending') {
+    throw new Error('This request has already been processed');
+  }
+
+  // Update request status
+  await updateDoc(requestRef, {
+    status: 'accepted',
+    acceptedAt: Timestamp.now(),
+  });
+
+  // Delete all mutual matches between these two users for this category
+  const matchesRef = collection(db, 'matches');
+  const matchesSnapshot = await getDocs(matchesRef);
+  
+  let deletedCount = 0;
+  
+  for (const matchDoc of matchesSnapshot.docs) {
+    const matchData = matchDoc.data();
+    const matchCategory = matchData.category || 'hikes';
+    
+    // Check if this match involves both users and is in the specified category
+    if (
+      matchCategory === request.category &&
+      matchData.userIds &&
+      matchData.userIds.includes(request.fromUserId) &&
+      matchData.userIds.includes(request.toUserId)
+    ) {
+      await deleteDoc(doc(db, 'matches', matchDoc.id));
+      deletedCount++;
+    }
+  }
+
+  // Also delete swipes for the matched items between these two users
+  // This allows them to swipe again on the same items
+  const user1SwipesRef = collection(db, 'userSwipes', request.fromUserId, 'swipes');
+  const user2SwipesRef = collection(db, 'userSwipes', request.toUserId, 'swipes');
+  
+  const [user1Swipes, user2Swipes] = await Promise.all([
+    getDocs(query(user1SwipesRef, where('category', '==', request.category), where('liked', '==', true))),
+    getDocs(query(user2SwipesRef, where('category', '==', request.category), where('liked', '==', true)))
+  ]);
+
+  // Find common liked items
+  const user1LikedIds = new Set(user1Swipes.docs.map(doc => doc.id));
+  const user2LikedIds = new Set(user2Swipes.docs.map(doc => doc.id));
+  
+  const mutuallyLikedIds = [...user1LikedIds].filter(id => user2LikedIds.has(id));
+
+  // Delete swipes for mutually liked items
+  for (const itemId of mutuallyLikedIds) {
+    await Promise.all([
+      deleteDoc(doc(db, 'userSwipes', request.fromUserId, 'swipes', itemId)),
+      deleteDoc(doc(db, 'userSwipes', request.toUserId, 'swipes', itemId))
+    ]);
+  }
+
+  console.log('✅ Reset request accepted!', { 
+    requestId, 
+    category: request.category, 
+    matchesDeleted: deletedCount,
+    swipesDeleted: mutuallyLikedIds.length * 2
+  });
+};
+
+/**
+ * Reject a reset request
+ */
+export const rejectResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.toUserId !== auth.currentUser.uid) {
+    throw new Error('You can only reject requests sent to you');
+  }
+
+  // Update request status
+  await updateDoc(requestRef, {
+    status: 'rejected',
+    rejectedAt: Timestamp.now(),
+  });
+
+  console.log('❌ Reset request rejected', { requestId });
+};
+
+/**
+ * Cancel a sent reset request
+ */
+export const cancelResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.fromUserId !== auth.currentUser.uid) {
+    throw new Error('You can only cancel your own requests');
+  }
+
+  // Delete the request
+  await deleteDoc(requestRef);
+
+  console.log('🚫 Reset request cancelled', { requestId });
+};
+
