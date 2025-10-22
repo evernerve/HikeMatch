@@ -12,6 +12,7 @@ import {
   getReceivedResetRequests,
   acceptResetRequest,
   rejectResetRequest,
+  cancelResetRequest,
   ConnectionRequest,
   Connection,
   ResetRequest
@@ -164,6 +165,16 @@ export default function Connections() {
       setToast({ message: error.message || 'Failed to decline request', type: 'error' });
     } finally {
       setResetActionRequest(null);
+    }
+  };
+
+  const handleCancelResetRequest = async (requestId: string) => {
+    try {
+      await cancelResetRequest(requestId);
+      setToast({ message: 'Reset request cancelled', type: 'info' });
+      await loadData();
+    } catch (error: any) {
+      setToast({ message: error.message || 'Failed to cancel request', type: 'error' });
     }
   };
 
@@ -401,9 +412,9 @@ export default function Connections() {
                 return (
                   <div
                     key={request.id}
-                    className="flex items-center justify-between p-3 sm:p-4 bg-yellow-50 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-yellow-50 rounded-lg gap-3"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-sm sm:text-base">
                         {categoryEmoji} Reset {categoryLabel} with {request.toDisplayName}
                       </p>
@@ -411,7 +422,13 @@ export default function Connections() {
                         Waiting for {request.toDisplayName} to respond...
                       </p>
                     </div>
-                    <span className="text-gray-400 text-xl sm:text-2xl">⏳</span>
+                    <button
+                      onClick={() => handleCancelResetRequest(request.id)}
+                      className="flex-shrink-0 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-semibold py-2 px-3 sm:px-4 rounded-lg transition text-sm whitespace-nowrap"
+                      title="Cancel request"
+                    >
+                      ✕ Cancel
+                    </button>
                   </div>
                 );
               })}
