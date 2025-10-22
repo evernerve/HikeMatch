@@ -702,7 +702,40 @@ export const getUnswipedCategoryItems = async (
   const allItems = await getCategoryItems(category);
   const swipedItemIds = await getUserCategorySwipes(userId, category);
   
-  return allItems.filter(item => !swipedItemIds.includes(item.id));
+  // Get user's connections
+  const connections = await getConnections();
+  const connectedUserIds = connections.map(conn => conn.connectedUserId);
+  
+  // Filter items based on:
+  // 1. Not already swiped
+  // 2. If item has createdBy (user contribution):
+  //    - Show if created by current user OR
+  //    - Show if created by a connected user
+  // 3. If no createdBy (seed data), always show
+  return allItems.filter(item => {
+    // Skip if already swiped
+    if (swipedItemIds.includes(item.id)) {
+      return false;
+    }
+    
+    // If no createdBy, it's seed data - always show
+    if (!item.createdBy) {
+      return true;
+    }
+    
+    // Show user's own contributions
+    if (item.createdBy === userId) {
+      return true;
+    }
+    
+    // Show contributions from connected users
+    if (connectedUserIds.includes(item.createdBy)) {
+      return true;
+    }
+    
+    // Hide contributions from non-connected users
+    return false;
+  });
 };
 
 /**

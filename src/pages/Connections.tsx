@@ -113,7 +113,7 @@ export default function Connections() {
             👥 Connections
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
-            Connect with friends to see your trail matches
+            Connect with friends to see your matches and share recommendations
           </p>
         </div>
 
@@ -212,7 +212,7 @@ export default function Connections() {
               <span className="text-5xl sm:text-6xl mb-3 sm:mb-4 block">🤝</span>
               <p className="text-sm sm:text-base text-gray-600">No connections yet</p>
               <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                Send a request to start matching trails with friends!
+                Send a request to start matching with friends!
               </p>
             </div>
           ) : (
@@ -244,7 +244,7 @@ export default function Connections() {
       <ConfirmModal
         isOpen={actionRequest?.action === 'accept'}
         title="Accept Connection?"
-        message="You'll be able to see trail matches with this user."
+        message="You'll be able to see matches and share recommendations with this user."
         confirmText="Accept"
         cancelText="Cancel"
         onConfirm={handleAccept}

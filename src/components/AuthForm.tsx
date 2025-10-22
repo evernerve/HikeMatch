@@ -338,7 +338,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-500 mt-4 sm:mt-6">
-          By continuing, you agree to find awesome hiking trails with your friends
+          By continuing, you agree to discover and match on things you love with your friends
         </p>
       </div>
     </div>

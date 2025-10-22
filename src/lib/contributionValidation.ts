@@ -22,28 +22,66 @@ export const validateImageURL = (url: string): { valid: boolean; message?: strin
   try {
     const urlObj = new URL(url);
     
-    // Trusted image domains
+    // Trusted image domains (expanded list)
     const trustedDomains = [
+      // Movie/TV databases
       'image.tmdb.org',
+      'themoviedb.org',
+      'imdb.com',
+      'm.media-amazon.com',
+      
+      // Image hosting services
       'imgur.com',
       'i.imgur.com',
+      
+      // Stock photo sites
       'unsplash.com',
       'images.unsplash.com',
       'pexels.com',
       'images.pexels.com',
       'pixabay.com',
+      'cdn.pixabay.com',
+      
+      // Wikipedia/Wikimedia
       'wikimedia.org',
-      'upload.wikimedia.org'
+      'upload.wikimedia.org',
+      
+      // CDNs and cloud storage
+      'cloudinary.com',
+      'res.cloudinary.com',
+      'googleusercontent.com',
+      'lh3.googleusercontent.com',
+      'firebasestorage.googleapis.com',
+      'storage.googleapis.com',
+      
+      // Restaurant/food sites
+      'yelp.com',
+      's3-media',
+      'tripadvisor.com',
+      'foursquare.com',
+      
+      // General CDNs
+      'cloudfront.net',
+      'akamaized.net',
+      'fastly.net',
+      'jsdelivr.net',
+      'cdninstagram.com',
+      
+      // Social media (for public images)
+      'fbcdn.net',
+      'twimg.com'
     ];
 
-    const isTrustedDomain = trustedDomains.some(domain => urlObj.hostname.includes(domain));
+    const isTrustedDomain = trustedDomains.some(domain => 
+      urlObj.hostname.includes(domain) || urlObj.hostname.endsWith(domain)
+    );
     
     if (isTrustedDomain) {
       return { valid: true };
     }
 
     // Check for image extension
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
     const hasImageExtension = imageExtensions.some(ext => 
       urlObj.pathname.toLowerCase().endsWith(ext)
     );

@@ -68,8 +68,8 @@ export default function Matches() {
           </h2>
           <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             {connectedUserIds.size === 0 
-              ? "Connect with friends first, then start swiping on trails together!"
-              : "Keep swiping on trails! When you and your friends both like the same trail, it'll appear here."
+              ? "Connect with friends first, then start swiping together!"
+              : "Keep swiping! When you and your friends both like the same item, it'll appear here."
             }
           </p>
           {connectedUserIds.size === 0 && (
