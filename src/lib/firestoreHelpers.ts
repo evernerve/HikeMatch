@@ -85,6 +85,19 @@ export interface Connection {
   connectedAt: Timestamp;
 }
 
+export interface ResetRequest {
+  id: string;
+  fromUserId: string;
+  fromUsername: string;
+  fromDisplayName: string;
+  toUserId: string;
+  toUsername: string;
+  toDisplayName: string;
+  category: CategoryType;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Timestamp;
+}
+
 // Authentication Functions
 
 /**
@@ -1179,3 +1192,252 @@ export const deleteUserContribution = async (
   
   console.log('🗑️ Contribution deleted!', { itemId, category });
 };
+
+// ============================================================================
+// RESET MATCHES FUNCTIONS
+// ============================================================================
+
+/**
+ * Send a reset request to a connected friend for a specific category
+ */
+export const sendResetRequest = async (
+  toUserId: string,
+  category: CategoryType
+): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const fromUserId = auth.currentUser.uid;
+
+  // Check if users are connected
+  const isConnected = await checkConnection(toUserId);
+  if (!isConnected) {
+    throw new Error('You must be connected with this user first');
+  }
+
+  // Get both user profiles
+  const [fromProfile, toProfile] = await Promise.all([
+    getUserProfile(fromUserId),
+    getUserProfile(toUserId)
+  ]);
+
+  if (!fromProfile || !toProfile) {
+    throw new Error('User profile not found');
+  }
+
+  // Check if there's already a pending request between these users for this category
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const existingQuery = query(
+    resetRequestsRef,
+    where('fromUserId', 'in', [fromUserId, toUserId]),
+    where('toUserId', 'in', [fromUserId, toUserId]),
+    where('category', '==', category),
+    where('status', '==', 'pending')
+  );
+  
+  const existingSnapshot = await getDocs(existingQuery);
+  
+  if (!existingSnapshot.empty) {
+    throw new Error('There is already a pending reset request for this category');
+  }
+
+  // Create the reset request
+  const resetRequestRef = doc(collection(db, 'resetRequests'));
+  await setDoc(resetRequestRef, {
+    fromUserId,
+    fromUsername: fromProfile.username,
+    fromDisplayName: fromProfile.displayName,
+    toUserId,
+    toUsername: toProfile.username,
+    toDisplayName: toProfile.displayName,
+    category,
+    status: 'pending',
+    createdAt: Timestamp.now(),
+  });
+
+  console.log('✅ Reset request sent!', { fromUserId, toUserId, category });
+};
+
+/**
+ * Get reset requests sent by current user
+ */
+export const getSentResetRequests = async (): Promise<ResetRequest[]> => {
+  if (!auth.currentUser) return [];
+
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const q = query(
+    resetRequestsRef,
+    where('fromUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as ResetRequest));
+};
+
+/**
+ * Get reset requests received by current user
+ */
+export const getReceivedResetRequests = async (): Promise<ResetRequest[]> => {
+  if (!auth.currentUser) return [];
+
+  const resetRequestsRef = collection(db, 'resetRequests');
+  const q = query(
+    resetRequestsRef,
+    where('toUserId', '==', auth.currentUser.uid),
+    where('status', '==', 'pending')
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as ResetRequest));
+};
+
+/**
+ * Accept a reset request and clear mutual matches for that category
+ */
+export const acceptResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.toUserId !== auth.currentUser.uid) {
+    throw new Error('You can only accept requests sent to you');
+  }
+
+  if (request.status !== 'pending') {
+    throw new Error('This request has already been processed');
+  }
+
+  // Update request status
+  await updateDoc(requestRef, {
+    status: 'accepted',
+    acceptedAt: Timestamp.now(),
+  });
+
+  // Delete all mutual matches between these two users for this category
+  const matchesRef = collection(db, 'matches');
+  const matchesSnapshot = await getDocs(matchesRef);
+  
+  let deletedCount = 0;
+  
+  for (const matchDoc of matchesSnapshot.docs) {
+    const matchData = matchDoc.data();
+    const matchCategory = matchData.category || 'hikes';
+    
+    // Check if this match involves both users and is in the specified category
+    if (
+      matchCategory === request.category &&
+      matchData.userIds &&
+      matchData.userIds.includes(request.fromUserId) &&
+      matchData.userIds.includes(request.toUserId)
+    ) {
+      await deleteDoc(doc(db, 'matches', matchDoc.id));
+      deletedCount++;
+    }
+  }
+
+  // Also delete swipes for the matched items between these two users
+  // This allows them to swipe again on the same items
+  const user1SwipesRef = collection(db, 'userSwipes', request.fromUserId, 'swipes');
+  const user2SwipesRef = collection(db, 'userSwipes', request.toUserId, 'swipes');
+  
+  const [user1Swipes, user2Swipes] = await Promise.all([
+    getDocs(query(user1SwipesRef, where('category', '==', request.category), where('liked', '==', true))),
+    getDocs(query(user2SwipesRef, where('category', '==', request.category), where('liked', '==', true)))
+  ]);
+
+  // Find common liked items
+  const user1LikedIds = new Set(user1Swipes.docs.map(doc => doc.id));
+  const user2LikedIds = new Set(user2Swipes.docs.map(doc => doc.id));
+  
+  const mutuallyLikedIds = [...user1LikedIds].filter(id => user2LikedIds.has(id));
+
+  // Delete swipes for mutually liked items
+  for (const itemId of mutuallyLikedIds) {
+    await Promise.all([
+      deleteDoc(doc(db, 'userSwipes', request.fromUserId, 'swipes', itemId)),
+      deleteDoc(doc(db, 'userSwipes', request.toUserId, 'swipes', itemId))
+    ]);
+  }
+
+  console.log('✅ Reset request accepted!', { 
+    requestId, 
+    category: request.category, 
+    matchesDeleted: deletedCount,
+    swipesDeleted: mutuallyLikedIds.length * 2
+  });
+};
+
+/**
+ * Reject a reset request
+ */
+export const rejectResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.toUserId !== auth.currentUser.uid) {
+    throw new Error('You can only reject requests sent to you');
+  }
+
+  // Update request status
+  await updateDoc(requestRef, {
+    status: 'rejected',
+    rejectedAt: Timestamp.now(),
+  });
+
+  console.log('❌ Reset request rejected', { requestId });
+};
+
+/**
+ * Cancel a sent reset request
+ */
+export const cancelResetRequest = async (requestId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const requestRef = doc(db, 'resetRequests', requestId);
+  const requestSnap = await getDoc(requestRef);
+  
+  if (!requestSnap.exists()) {
+    throw new Error('Reset request not found');
+  }
+
+  const request = requestSnap.data() as Omit<ResetRequest, 'id'>;
+  
+  if (request.fromUserId !== auth.currentUser.uid) {
+    throw new Error('You can only cancel your own requests');
+  }
+
+  // Delete the request
+  await deleteDoc(requestRef);
+
+  console.log('🚫 Reset request cancelled', { requestId });
+};
+
