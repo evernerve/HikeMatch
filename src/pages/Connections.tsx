@@ -71,8 +71,20 @@ export default function Connections() {
     setSending(true);
 
     try {
-      await sendConnectionRequest(username.trim());
-      setToast({ message: `Connection request sent to @${username}!`, type: 'success' });
+      const result = await sendConnectionRequest(username.trim());
+      
+      if (result === 'connected') {
+        setToast({ 
+          message: `🎉 You're now connected with @${username}! They had already sent you a request.`, 
+          type: 'success' 
+        });
+      } else {
+        setToast({ 
+          message: `Connection request sent to @${username}!`, 
+          type: 'success' 
+        });
+      }
+      
       setUsername('');
       await loadData();
     } catch (error: any) {

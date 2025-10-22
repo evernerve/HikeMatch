@@ -472,8 +472,9 @@ export const getUserByUsername = async (username: string): Promise<UserProfile |
 
 /**
  * Send a connection request to another user
+ * Returns 'sent' if new request created, 'connected' if auto-accepted existing request
  */
-export const sendConnectionRequest = async (toUsername: string): Promise<void> => {
+export const sendConnectionRequest = async (toUsername: string): Promise<'sent' | 'connected'> => {
   if (!auth.currentUser) throw new Error('Not authenticated');
   
   const fromUser = await getUserProfile(auth.currentUser.uid);
@@ -486,24 +487,40 @@ export const sendConnectionRequest = async (toUsername: string): Promise<void> =
     throw new Error('Cannot send request to yourself');
   }
   
-  // Check if request already exists
+  // Check if already connected
+  const isConnected = await checkConnection(toUser.uid);
+  if (isConnected) {
+    throw new Error('Already connected with this user');
+  }
+  
+  // Check if there's already a pending request FROM them TO us
   const requestsRef = collection(db, 'connectionRequests');
-  const existingRequest = query(
+  const reverseRequest = query(
+    requestsRef,
+    where('fromUserId', '==', toUser.uid),
+    where('toUserId', '==', fromUser.uid),
+    where('status', '==', 'pending')
+  );
+  const reverseSnapshot = await getDocs(reverseRequest);
+  
+  if (!reverseSnapshot.empty) {
+    // They already sent us a request! Auto-accept it instead of creating a new one
+    const existingRequestId = reverseSnapshot.docs[0].id;
+    await acceptConnectionRequest(existingRequestId);
+    return 'connected';
+  }
+  
+  // Check if we already sent them a request
+  const forwardRequest = query(
     requestsRef,
     where('fromUserId', '==', fromUser.uid),
     where('toUserId', '==', toUser.uid),
     where('status', '==', 'pending')
   );
-  const existingSnapshot = await getDocs(existingRequest);
+  const forwardSnapshot = await getDocs(forwardRequest);
   
-  if (!existingSnapshot.empty) {
+  if (!forwardSnapshot.empty) {
     throw new Error('Connection request already sent');
-  }
-  
-  // Check if already connected
-  const isConnected = await checkConnection(toUser.uid);
-  if (isConnected) {
-    throw new Error('Already connected with this user');
   }
   
   // Create the request
@@ -518,6 +535,8 @@ export const sendConnectionRequest = async (toUsername: string): Promise<void> =
     status: 'pending',
     createdAt: Timestamp.now()
   });
+  
+  return 'sent';
 };
 
 /**
@@ -569,16 +588,37 @@ export const acceptConnectionRequest = async (requestId: string): Promise<void> 
   
   const request = requestSnap.data() as ConnectionRequest;
   
-  // Update request status
-  await setDoc(requestRef, { ...request, status: 'accepted' });
+  if (request.status !== 'pending') {
+    throw new Error('Request has already been processed');
+  }
   
-  // Create connection for both users
+  // Check if connection already exists (prevents duplicates)
+  const existingConnection = await checkConnection(
+    request.fromUserId === auth.currentUser.uid ? request.toUserId : request.fromUserId
+  );
+  
+  if (existingConnection) {
+    // Connection already exists, just update request status
+    await updateDoc(requestRef, { status: 'accepted' });
+    return;
+  }
+  
+  // Update request status
+  await updateDoc(requestRef, { status: 'accepted' });
+  
+  // Get display names
+  const [fromUserProfile, toUserProfile] = await Promise.all([
+    getUserProfile(request.fromUserId),
+    getUserProfile(request.toUserId)
+  ]);
+  
+  // Create bidirectional connections
   const connection1Ref = doc(collection(db, 'connections'));
   await setDoc(connection1Ref, {
     userId: request.fromUserId,
     connectedUserId: request.toUserId,
     connectedUsername: request.toUsername,
-    connectedDisplayName: (await getUserProfile(request.toUserId))?.displayName || '',
+    connectedDisplayName: toUserProfile?.displayName || '',
     connectedAt: Timestamp.now()
   });
   
@@ -587,9 +627,27 @@ export const acceptConnectionRequest = async (requestId: string): Promise<void> 
     userId: request.toUserId,
     connectedUserId: request.fromUserId,
     connectedUsername: request.fromUsername,
-    connectedDisplayName: request.fromDisplayName,
+    connectedDisplayName: fromUserProfile?.displayName || request.fromDisplayName,
     connectedAt: Timestamp.now()
   });
+  
+  // Check for and handle reciprocal pending request
+  const requestsRef = collection(db, 'connectionRequests');
+  const reciprocalQuery = query(
+    requestsRef,
+    where('fromUserId', '==', request.toUserId),
+    where('toUserId', '==', request.fromUserId),
+    where('status', '==', 'pending')
+  );
+  
+  const reciprocalSnapshot = await getDocs(reciprocalQuery);
+  
+  // If there's a reciprocal request, mark it as accepted too
+  if (!reciprocalSnapshot.empty) {
+    for (const doc of reciprocalSnapshot.docs) {
+      await updateDoc(doc.ref, { status: 'accepted' });
+    }
+  }
 };
 
 /**
