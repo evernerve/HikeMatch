@@ -1,5 +1,9 @@
+import { config } from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+
+// Load environment variables
+config();
 
 // Firebase config - use your actual config
 const firebaseConfig = {

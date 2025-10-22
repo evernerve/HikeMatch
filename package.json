@@ -11,7 +11,8 @@
     "seed:movies": "tsx scripts/seedMovies.ts",
     "seed:tv": "tsx scripts/seedTVShows.ts",
     "seed:restaurants": "tsx scripts/seedRestaurants.ts",
-    "seed:all": "tsx scripts/seedAll.ts"
+    "seed:all": "tsx scripts/seedAll.ts",
+    "cleanup:connections": "tsx scripts/cleanupDuplicateConnections.ts"
   },
   "dependencies": {
     "@react-spring/web": "^9.7.5",
