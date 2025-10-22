@@ -7,6 +7,7 @@ import {
   getConnections,
   acceptConnectionRequest,
   rejectConnectionRequest,
+  removeConnection,
   sendResetRequest,
   getSentResetRequests,
   getReceivedResetRequests,
@@ -36,6 +37,7 @@ export default function Connections() {
   const [resetActionRequest, setResetActionRequest] = useState<{ id: string; action: 'accept' | 'reject' } | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<{ userId: string; name: string } | null>(null);
+  const [connectionToRemove, setConnectionToRemove] = useState<{ userId: string; name: string } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -188,6 +190,23 @@ export default function Connections() {
     setSelectedFriend(null);
   };
 
+  const handleRemoveConnection = async () => {
+    if (!connectionToRemove) return;
+
+    try {
+      await removeConnection(connectionToRemove.userId);
+      setToast({ 
+        message: `You are no longer connected with ${connectionToRemove.name}`, 
+        type: 'info' 
+      });
+      await loadData();
+    } catch (error: any) {
+      setToast({ message: error.message || 'Failed to remove connection', type: 'error' });
+    } finally {
+      setConnectionToRemove(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
@@ -328,13 +347,22 @@ export default function Connections() {
                       @{connection.connectedUsername}
                     </p>
                   </div>
-                  <button
-                    onClick={() => openResetModal(connection.connectedUserId, connection.connectedDisplayName)}
-                    className="flex-shrink-0 bg-orange-100 hover:bg-orange-200 active:bg-orange-300 text-orange-700 font-semibold py-2 px-3 rounded-lg transition text-xs sm:text-sm whitespace-nowrap"
-                    title="Reset matches"
-                  >
-                    🔄 Reset
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => openResetModal(connection.connectedUserId, connection.connectedDisplayName)}
+                      className="bg-orange-100 hover:bg-orange-200 active:bg-orange-300 text-orange-700 font-semibold py-2 px-3 rounded-lg transition text-xs sm:text-sm whitespace-nowrap"
+                      title="Reset matches"
+                    >
+                      🔄
+                    </button>
+                    <button
+                      onClick={() => setConnectionToRemove({ userId: connection.connectedUserId, name: connection.connectedDisplayName })}
+                      className="bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-700 font-semibold py-2 px-3 rounded-lg transition text-xs sm:text-sm whitespace-nowrap"
+                      title="Remove connection"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -491,6 +519,17 @@ export default function Connections() {
         onConfirm={handleRejectResetRequest}
         onCancel={() => setResetActionRequest(null)}
         type="info"
+      />
+
+      <ConfirmModal
+        isOpen={connectionToRemove !== null}
+        title="Remove Connection?"
+        message={`Are you sure you want to remove ${connectionToRemove?.name || 'this user'} from your connections? You will no longer see each other's matches or contributions.`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        onConfirm={handleRemoveConnection}
+        onCancel={() => setConnectionToRemove(null)}
+        type="warning"
       />
 
       {/* Toast */}

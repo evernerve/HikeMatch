@@ -695,6 +695,50 @@ export const checkConnection = async (userId: string): Promise<boolean> => {
   return !snapshot.empty;
 };
 
+/**
+ * Remove a connection (unfriend)
+ * Deletes both sides of the bidirectional connection
+ */
+export const removeConnection = async (connectedUserId: string): Promise<void> => {
+  if (!auth.currentUser) {
+    throw new Error('You must be logged in');
+  }
+
+  const currentUserId = auth.currentUser.uid;
+
+  // Delete connection from current user's side
+  const connectionsRef = collection(db, 'connections');
+  const userConnectionQuery = query(
+    connectionsRef,
+    where('userId', '==', currentUserId),
+    where('connectedUserId', '==', connectedUserId)
+  );
+  const userConnectionSnapshot = await getDocs(userConnectionQuery);
+
+  // Delete connection from other user's side
+  const otherConnectionQuery = query(
+    connectionsRef,
+    where('userId', '==', connectedUserId),
+    where('connectedUserId', '==', currentUserId)
+  );
+  const otherConnectionSnapshot = await getDocs(otherConnectionQuery);
+
+  // Delete all matching connection documents (should be 2: one for each user)
+  const deletePromises: Promise<void>[] = [];
+  
+  userConnectionSnapshot.docs.forEach(doc => {
+    deletePromises.push(deleteDoc(doc.ref));
+  });
+  
+  otherConnectionSnapshot.docs.forEach(doc => {
+    deletePromises.push(deleteDoc(doc.ref));
+  });
+
+  await Promise.all(deletePromises);
+
+  console.log('✅ Connection removed:', { currentUserId, connectedUserId, docsDeleted: deletePromises.length });
+};
+
 // ============================================================================
 // MULTI-CATEGORY FUNCTIONS (NEW - Backward Compatible)
 // ============================================================================
