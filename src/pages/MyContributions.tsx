@@ -58,7 +58,21 @@ export default function MyContributions() {
     setLoading(true);
     try {
       const items = await getUserContributions(user.uid);
-      setContributions(items);
+      // Filter out any null/invalid items and log warnings
+      const validItems = items.filter(item => {
+        if (!item || !item.id || !item.name || !item.category) {
+          console.warn('Filtering out invalid contribution:', item);
+          return false;
+        }
+        return true;
+      });
+      setContributions(validItems);
+      
+      // If we filtered out items, show a warning
+      if (items.length !== validItems.length) {
+        const filteredCount = items.length - validItems.length;
+        showToastMessage(`${filteredCount} incomplete item${filteredCount > 1 ? 's' : ''} hidden. Please edit or delete them.`, 'error');
+      }
     } catch (error) {
       console.error('Error loading contributions:', error);
       showToastMessage('Failed to load contributions', 'error');

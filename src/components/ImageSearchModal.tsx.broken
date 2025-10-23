@@ -1,0 +1,429 @@
+/**
+ * ImageSearchModal Component
+ * 
+ * Allows users to search for images:
+ * - Google Images (opens in new tab)
+ * - Direct URL input
+ */
+
+
+import { useState, useEffect } from 'react';
+import type { CategoryType } from '../types/categories';
+
+interface ImageSearchModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectImage: (url: string) => void;
+  category: CategoryType;
+  searchQuery?: string;
+}
+
+type ImageSource = 'google' | 'url';
+
+interface SearchResult {
+  url: string;
+  thumbnail: string;
+  alt: string;
+  source: string;
+  photographer?: string;
+}
+
+export function ImageSearchModal({ 
+  isOpen, 
+  onClose, 
+  onSelectImage, 
+  category: _category, // Kept for interface compatibility
+  searchQuery = '' 
+}: ImageSearchModalProps) {
+  const [source, setSource] = useState<ImageSource>('google');
+  const [query, setQuery] = useState(searchQuery);
+  const [directUrl, setDirectUrl] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery) {
+      setQuery(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Reset preview when URL changes
+  useEffect(() => {
+    setPreviewUrl(null);
+    setPreviewError(false);
+    setPreviewLoading(false);
+    setError(null);
+  }, [directUrl]);
+
+  // Get recommended sources - same for all categories
+  const recommendedSources: ImageSource[] = ['google', 'url'];
+
+  // Handle Google Images search
+  const handleGoogleImagesSearch = () => {
+    if (!query.trim()) return;
+    
+    const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
+    
+    setResults([{ url: '', thumbnail: '', alt: 'Instructions', source: 'Google' }]);
+    setLoading(false);
+  };
+
+
+
+  // Handle search
+  const handleSearch = async () => {
+    if (!query.trim() && source !== 'url') return;
+
+    setLoading(true);
+    setError(null);
+    setResults([]);
+
+    try {
+      if (source === 'google') {
+        handleGoogleImagesSearch();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to search images');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle direct URL preview
+  const handlePreviewUrl = () => {
+    if (!directUrl.trim()) return;
+    
+    // Basic URL validation
+    try {
+      new URL(directUrl);
+      setPreviewError(false);
+      setPreviewLoading(true);
+      setPreviewUrl(directUrl);
+      setError(null);
+    } catch {
+      setError('Please enter a valid URL');
+      setPreviewUrl(null);
+      setPreviewError(true);
+    }
+  };
+
+  // Handle confirming the previewed image
+  const handleConfirmPreview = () => {
+    if (previewUrl) {
+      onSelectImage(previewUrl);
+      onClose();
+    }
+  };
+
+  // Handle image selection
+  const handleSelectImage = (url: string) => {
+    onSelectImage(url);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  // Handle Google Images search
+  const handleGoogleImagesSearch = () => {
+    if (!query.trim()) return;
+    
+    const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
+    
+    setResults([{ url: '', thumbnail: '', alt: 'Instructions', source: 'Google' }]);
+    setLoading(false);
+  };
+
+
+
+  // Handle search
+  const handleSearch = async () => {
+    if (!query.trim() && source !== 'url') return;
+
+    setLoading(true);
+    setError(null);
+    setResults([]);
+
+    try {
+      if (source === 'google') {
+        handleGoogleImagesSearch();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to search images');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle direct URL preview
+  const handlePreviewUrl = () => {
+    if (!directUrl.trim()) return;
+    
+    // Basic URL validation
+    try {
+      new URL(directUrl);
+      setPreviewError(false);
+      setPreviewLoading(true);
+      setPreviewUrl(directUrl);
+      setError(null);
+    } catch {
+      setError('Please enter a valid URL');
+      setPreviewUrl(null);
+      setPreviewError(true);
+    }
+  };
+
+  // Handle confirming the previewed image
+  const handleConfirmPreview = () => {
+    if (previewUrl) {
+      onSelectImage(previewUrl);
+      onClose();
+    }
+  };
+
+  // Reset preview when URL changes
+  useEffect(() => {
+    setPreviewUrl(null);
+    setPreviewError(false);
+    setPreviewLoading(false);
+    setError(null);
+  }, [directUrl]);
+
+  // Handle image selection
+  const handleSelectImage = (url: string) => {
+    onSelectImage(url);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 z-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-white">Search Images</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Source Tabs */}
+          <div className="flex gap-2 mb-4 overflow-x-auto">
+            {recommendedSources.map((src) => (
+              <button
+                key={src}
+                onClick={() => setSource(src)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  source === src
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {src === 'url' ? '🔗 Direct URL' : '🔍 Google Images'}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Input */}
+          {source !== 'url' ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder={`Enter search term (e.g., "Inception movie poster")`}
+                className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+              />
+              <button
+                onClick={handleSearch}
+                disabled={loading || !query.trim()}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Opening...' : '🔍 Search on Google'}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={directUrl}
+                  onChange={(e) => setDirectUrl(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handlePreviewUrl()}
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={handlePreviewUrl}
+                  disabled={!directUrl.trim()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mx-6 mt-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            {error}
+          </div>
+        )}
+
+        {/* Results */}
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-gray-400 mt-4">Opening Google Images...</p>
+            </div>
+          ) : previewUrl ? (
+            /* Image Preview for Direct URL */
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-gray-700 rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-gray-600">
+                  <h3 className="text-lg font-semibold text-white mb-1">Image Preview</h3>
+                  <p className="text-sm text-gray-400">Review the image before confirming</p>
+                </div>
+                
+                <div className="relative bg-gray-900 flex items-center justify-center min-h-[300px] max-h-[500px]">
+                  {previewLoading && !previewError && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                  
+                  {previewError ? (
+                    <div className="text-center p-8">
+                      <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-red-400 font-medium mb-2">Failed to load image</p>
+                      <p className="text-gray-400 text-sm">The URL might be invalid or the image is not accessible.</p>
+                      <p className="text-gray-400 text-sm mt-2">Try a different URL or check if the image requires authentication.</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className={`max-w-full max-h-[500px] object-contain ${previewLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+                      onLoad={() => setPreviewLoading(false)}
+                      onError={() => {
+                        setPreviewLoading(false);
+                        setPreviewError(true);
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div className="p-4 bg-gray-800">
+                  <p className="text-xs text-gray-400 mb-3 break-all">
+                    <strong>URL:</strong> {previewUrl}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleConfirmPreview}
+                      disabled={previewError}
+                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                    >
+                      ✓ Confirm & Use This Image
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPreviewUrl(null);
+                        setPreviewError(false);
+                        setPreviewLoading(false);
+                      }}
+                      className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : results.length > 0 && source === 'google' ? (
+            <div className="text-center py-8 px-4">
+              <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6 max-w-2xl mx-auto">
+                <h3 className="text-xl font-semibold text-white mb-3">✓ Google Images opened in new tab</h3>
+                <div className="text-gray-300 space-y-2 text-left">
+                  <p className="font-medium">Follow these steps:</p>
+                  <ol className="list-decimal list-inside space-y-2 ml-2">
+                    <li>Find the image you want in the Google Images tab</li>
+                    <li>Right-click the image and select "Copy image address"</li>
+                    <li>Come back here and switch to the "🔗 Direct URL" tab</li>
+                    <li>Paste the URL you copied</li>
+                  </ol>
+                  <div className="mt-4 pt-4 border-t border-blue-700">
+                    <p className="text-sm text-gray-400">💡 Tip: For best results, click "View Image" on Google Images to get the full-size image URL</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : results.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleSelectImage(result.url)}
+                  className="group cursor-pointer relative overflow-hidden rounded-lg bg-gray-700 hover:ring-2 hover:ring-blue-500 transition-all"
+                >
+                  <div className="aspect-w-4 aspect-h-3">
+                    <img
+                      src={result.thumbnail}
+                      alt={result.alt}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                      }}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                    <button className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium transition-opacity">
+                      Select
+                    </button>
+                  </div>
+                  <div className="p-2 bg-gray-900">
+                    <p className="text-xs text-gray-400 truncate">{result.alt}</p>
+                    <p className="text-xs text-gray-500">{result.source}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-400">
+              {source === 'url' 
+                ? 'Enter a direct URL to an image above' 
+                : 'Enter a search query and click "🔍 Search on Google"'}
+            </div>
+          )}
+        </div>
+
+        {/* Tips */}
+        <div className="border-t border-gray-700 p-6 bg-gray-900">
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">💡 Tips:</h3>
+          <ul className="text-sm text-gray-400 space-y-1">
+            <li>• <strong>Google Images:</strong> Best for finding specific images (movies, restaurants, places)</li>
+            <li>• <strong>Direct URL:</strong> Right-click any image online → "Copy image address" → paste here</li>
+            <li>• For movies: Search "movie title poster" or "movie title year"</li>
+            <li>• For restaurants: Search the restaurant name + location</li>
+            <li>• For hikes: Search the trail name + "photo"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}

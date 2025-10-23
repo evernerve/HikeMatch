@@ -11,44 +11,93 @@ interface ContributionCardProps {
 }
 
 export default function ContributionCard({ item, onEdit, onDelete }: ContributionCardProps) {
-  // Type-safe access to category-specific data
-  const hikeData = isHikeData(item.categoryData) ? item.categoryData : null;
-  const movieData = isMovieData(item.categoryData) ? item.categoryData : null;
-  const tvData = isTVData(item.categoryData) ? item.categoryData : null;
-  const restaurantData = isRestaurantData(item.categoryData) ? item.categoryData : null;
+  // Check if item has valid data
+  if (!item || !item.name || !item.category) {
+    console.warn('Invalid item data:', item);
+    return null;
+  }
+
+  // Type-safe access to category-specific data with fallback
+  const hikeData = item.categoryData && isHikeData(item.categoryData) ? item.categoryData : null;
+  const movieData = item.categoryData && isMovieData(item.categoryData) ? item.categoryData : null;
+  const tvData = item.categoryData && isTVData(item.categoryData) ? item.categoryData : null;
+  const restaurantData = item.categoryData && isRestaurantData(item.categoryData) ? item.categoryData : null;
 
   // Get key stat for display
   const getMainStat = () => {
-    if (hikeData) return `${hikeData.lengthKm} km • ${hikeData.durationHours} hrs`;
-    if (movieData) return `${movieData.year} • ${movieData.runtime} min`;
-    if (tvData) return `${tvData.startYear}${tvData.endYear ? `-${tvData.endYear}` : '+'} • ${tvData.seasons} seasons`;
-    if (restaurantData) return `${restaurantData.priceRange} • ${restaurantData.location}`;
-    return '';
+    try {
+      if (hikeData && typeof hikeData.lengthKm === 'number' && typeof hikeData.durationHours === 'number') {
+        return `${hikeData.lengthKm} km • ${hikeData.durationHours} hrs`;
+      }
+      if (movieData && typeof movieData.year === 'number' && typeof movieData.runtime === 'number') {
+        return `${movieData.year} • ${movieData.runtime} min`;
+      }
+      if (tvData && typeof tvData.startYear === 'number' && typeof tvData.seasons === 'number') {
+        return `${tvData.startYear}${tvData.endYear ? `-${tvData.endYear}` : '+'} • ${tvData.seasons} seasons`;
+      }
+      if (restaurantData && restaurantData.priceRange && restaurantData.location) {
+        return `${restaurantData.priceRange} • ${restaurantData.location}`;
+      }
+      return 'Details incomplete';
+    } catch (error) {
+      console.error('Error getting main stat:', error, { hikeData, movieData, tvData, restaurantData });
+      return 'Details incomplete';
+    }
   };
 
   // Get rating for display
   const getRating = () => {
-    if (movieData) return `⭐ ${movieData.rating.toFixed(1)}/10`;
-    if (tvData) return `⭐ ${tvData.rating.toFixed(1)}/10`;
-    if (restaurantData) return `⭐ ${restaurantData.rating.toFixed(1)}/5`;
-    if (hikeData) return `${hikeData.difficulty === 'easy' ? '🟢' : hikeData.difficulty === 'moderate' ? '🟡' : '🔴'} ${hikeData.difficulty}`;
-    return '';
+    try {
+      if (movieData && movieData.rating !== null && movieData.rating !== undefined && typeof movieData.rating === 'number' && !isNaN(movieData.rating)) {
+        return `⭐ ${movieData.rating.toFixed(1)}/10`;
+      }
+      if (tvData && tvData.rating !== null && tvData.rating !== undefined && typeof tvData.rating === 'number' && !isNaN(tvData.rating)) {
+        return `⭐ ${tvData.rating.toFixed(1)}/10`;
+      }
+      if (restaurantData && restaurantData.rating !== null && restaurantData.rating !== undefined && typeof restaurantData.rating === 'number' && !isNaN(restaurantData.rating)) {
+        return `⭐ ${restaurantData.rating.toFixed(1)}/5`;
+      }
+      if (hikeData && hikeData.difficulty) {
+        return `${hikeData.difficulty === 'easy' ? '🟢' : hikeData.difficulty === 'moderate' ? '🟡' : '🔴'} ${hikeData.difficulty}`;
+      }
+      return '';
+    } catch (error) {
+      console.error('Error getting rating:', error, { movieData, tvData, restaurantData, hikeData });
+      return '';
+    }
   };
 
   return (
     <div className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
       {/* Image */}
-      <div className="relative aspect-[3/4] overflow-hidden">
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+      <div className="relative aspect-[3/4] overflow-hidden bg-gray-200">
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              // Fallback if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-300">
+            <span className="text-6xl opacity-50">{getCategoryIcon(item.category)}</span>
+          </div>
+        )}
         {/* Category Badge */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm">
           <span className="text-lg">{getCategoryIcon(item.category)}</span>
           <span className="text-xs font-medium text-gray-700 capitalize">{item.category}</span>
         </div>
+        {/* Incomplete Data Warning */}
+        {!item.categoryData && (
+          <div className="absolute top-3 right-3 bg-yellow-500/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
+            <span className="text-xs font-medium text-white">⚠️ Incomplete</span>
+          </div>
+        )}
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       </div>
@@ -56,11 +105,11 @@ export default function ContributionCard({ item, onEdit, onDelete }: Contributio
       {/* Content */}
       <div className="p-4">
         <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">
-          {item.name}
+          {item.name || 'Untitled'}
         </h3>
         
         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-          {item.description}
+          {item.description || 'No description provided'}
         </p>
 
         {/* Stats */}

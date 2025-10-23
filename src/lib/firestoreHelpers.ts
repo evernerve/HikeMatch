@@ -1127,8 +1127,6 @@ export const createUserContribution = async (
  */
 export const getUserContributions = async (userId: string): Promise<SwipeItem[]> => {
   try {
-    const contributions: SwipeItem[] = [];
-    
     // Query userContributions collection for this user
     // Simple query with only where clause - no orderBy to avoid composite index
     const contributionsRef = collection(db, 'userContributions');
@@ -1156,15 +1154,28 @@ export const getUserContributions = async (userId: string): Promise<SwipeItem[]>
       // Determine collection name
       const collectionName = category === 'hikes' ? 'trails' : category === 'tv' ? 'tvShows' : category;
       
+      console.log(`Fetching contribution: category=${category}, collection=${collectionName}, itemId=${itemId}`);
+      
       // Fetch the actual item
       const itemRef = doc(db, collectionName, itemId);
       const itemDoc = await getDoc(itemRef);
       
       if (itemDoc.exists()) {
-        contributionsWithTime.push({
-          item: itemDoc.data() as SwipeItem,
-          contributedAt
-        });
+        const itemData = itemDoc.data() as SwipeItem;
+        // Ensure the item has required fields
+        if (itemData && itemData.id && itemData.name && itemData.category) {
+          contributionsWithTime.push({
+            item: {
+              ...itemData,
+              id: itemDoc.id, // Ensure ID is set
+            },
+            contributedAt
+          });
+        } else {
+          console.warn(`Item ${itemId} in ${collectionName} has missing required fields:`, itemData);
+        }
+      } else {
+        console.warn(`Item ${itemId} not found in collection ${collectionName}`);
       }
     }
     
@@ -1177,8 +1188,6 @@ export const getUserContributions = async (userId: string): Promise<SwipeItem[]>
     
     // Extract just the items
     return contributionsWithTime.map(c => c.item);
-    
-    return contributions;
   } catch (error) {
     console.error('Error fetching user contributions:', error);
     throw error;
