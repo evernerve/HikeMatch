@@ -82,7 +82,7 @@ export default function Navbar() {
               className="ml-2 px-4 py-2 rounded-lg font-medium text-white/80 hover:bg-red-500/80 hover:text-white transition-all duration-200"
               title="Logout"
             >
-              <span className="mr-1">�</span>
+              <span className="mr-1">🚪</span>
               Logout
             </button>
           </div>

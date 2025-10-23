@@ -238,10 +238,10 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between z-10 shadow-md">
+            <div className="flex items-center space-x-3 flex-1 pr-4">
               <span className="text-3xl">{getCategoryIcon(category)}</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold">{editMode ? 'Edit Item' : 'Add New Item'}</h2>
                 <p className="text-sm text-primary-100">{editMode ? 'Update your contribution' : 'Share with the community'}</p>
               </div>
@@ -249,7 +249,7 @@ export default function AddItemModal({ isOpen, onClose, activeCategory, onSucces
             <button
               onClick={handleClose}
               disabled={loading}
-              className="text-white hover:text-primary-100 transition-colors disabled:opacity-50"
+              className="flex-shrink-0 text-white hover:text-primary-100 transition-colors disabled:opacity-50 p-1 hover:bg-white/10 rounded-lg"
               aria-label="Close modal"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

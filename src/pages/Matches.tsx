@@ -208,9 +208,11 @@ export default function Matches() {
                         <span className="flex items-center">
                           ⏱️ {(swipeItem.categoryData as any).runtime} min
                         </span>
-                        <span className="flex items-center">
-                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
-                        </span>
+                        {typeof (swipeItem.categoryData as any).rating === 'number' && (
+                          <span className="flex items-center">
+                            ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {(swipeItem.categoryData as any).genres.slice(0, 3).map((genre: string, i: number) => (
@@ -231,9 +233,11 @@ export default function Matches() {
                         <span className="flex items-center">
                           📖 {(swipeItem.categoryData as any).episodes} episodes
                         </span>
-                        <span className="flex items-center">
-                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
-                        </span>
+                        {typeof (swipeItem.categoryData as any).rating === 'number' && (
+                          <span className="flex items-center">
+                            ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {(swipeItem.categoryData as any).genres.slice(0, 3).map((genre: string, i: number) => (
@@ -254,9 +258,11 @@ export default function Matches() {
                         <span className="flex items-center">
                           📍 {(swipeItem.categoryData as any).location}
                         </span>
-                        <span className="flex items-center">
-                          ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
-                        </span>
+                        {typeof (swipeItem.categoryData as any).rating === 'number' && (
+                          <span className="flex items-center">
+                            ⭐ {(swipeItem.categoryData as any).rating.toFixed(1)}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {(swipeItem.categoryData as any).cuisine.slice(0, 3).map((cuisine: string, i: number) => (
